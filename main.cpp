@@ -1,7 +1,8 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <unordered_map>
+#include <map>
+#include <vector>
 #include "ogrsf_frmts.h"
 #include <omp.h>
 #include <ctime>
@@ -58,8 +59,6 @@ public:
 int PoligonAsset::ID_poly_gen = 0;
 
 class PoligonBuilding {
-    static int ID_gen;
-    
 public:
     int         ID_build;
     char        Type[50];
@@ -80,8 +79,6 @@ public:
     char        FIAS[200];
     OGRPolygon    Polygon;
     std::map<double, double> LevelArea;
-
-    static int get_id() { return ID_gen++; }
 
     void addArea(double RxLev, double Area) {
         if (LevelArea.find(RxLev) == LevelArea.end()) {
@@ -173,16 +170,13 @@ public:
     
 };
 
-int PoligonBuilding::ID_gen = 0;
-
-
 
 int main() {
 
     setlocale(LC_ALL, "Russian");
     double start = clock();
     std::map<int, PoligonAsset> AssetDate;
-    std::map<int, PoligonBuilding> BuildingDate;
+    std::vector<PoligonBuilding> BuildingDate;
     int max_thread = omp_get_max_threads() - 1;
     omp_set_num_threads(max_thread);
     int Asset_step_m = 10;
@@ -382,9 +376,7 @@ int main() {
             
             if (poFeature->GetGeometryRef() != NULL && wkbFlatten(poFeature->GetGeometryRef()->getGeometryType()) == wkbPolygon) {
                 
-                int id = PoligonBuilding::get_id();
-                
-                BuildingDate.insert(std::pair<int, PoligonBuilding> (id, PoligonBuilding(ID_build, Type, Wall_Mat, Building, Etage, Area, People_D, People_N, Volcano_type, Clutter_num, Clutter_type, Lon, Lat, Address_NP, Address_street, Address_number, FIAS, poFeature->GetGeometryRef())));
+                BuildingDate.push_back(PoligonBuilding(ID_build, Type, Wall_Mat, Building, Etage, Area, People_D, People_N, Volcano_type, Clutter_num, Clutter_type, Lon, Lat, Address_NP, Address_street, Address_number, FIAS, poFeature->GetGeometryRef()));
                 
             }
             
@@ -414,11 +406,11 @@ int main() {
             
             auto poly = AssetDate.find(i);
             
-            if ((*iBuildingDate).second.Polygon.Contains(&((*poly).second.Polygon)) || (*iBuildingDate).second.Polygon.Overlaps(&((*poly).second.Polygon)) || (*poly).second.Polygon.Contains(&((*iBuildingDate).second.Polygon))) {
+            if ((*iBuildingDate).Polygon.Contains(&((*poly).second.Polygon)) || (*iBuildingDate).Polygon.Overlaps(&((*poly).second.Polygon)) || (*poly).second.Polygon.Contains(&((*iBuildingDate).Polygon))) {
             
 #pragma omp critical
                 {
-                    LinkPolyToBuild.insert(std::pair<int, int>(i, (*iBuildingDate).first));
+                   // LinkPolyToBuild.insert(std::pair<int, int>(i, (*iBuildingDate).first));
                 }
             }
         }
@@ -438,7 +430,7 @@ int main() {
 
         if (LinkPolyToBuild.count(i) == 1) {
             auto PolyId = LinkPolyToBuild.find(i);
-            auto Build = BuildingDate.find((*PolyId).second);
+            //auto Build = BuildingDate.find((*PolyId).second);
             auto PolyAss = AssetDate.find(i);
 //#pragma omp critical
             {
