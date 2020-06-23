@@ -175,7 +175,7 @@ int main() {
 
     setlocale(LC_ALL, "Russian");
     double start = clock();
-    std::map<int, PoligonAsset> AssetDate;
+    std::vector<PoligonAsset> CoverDate;
     std::vector<PoligonBuilding> BuildingDate;
     int max_thread = omp_get_max_threads() - 1;
     omp_set_num_threads(max_thread);
@@ -243,7 +243,7 @@ int main() {
 
                         int id = PoligonAsset::get_id();
 
-                        AssetDate.insert(std::pair<int, PoligonAsset>(id, PoligonAsset(rxlev, Mpol->getGeometryRef(j), id)));
+                        CoverDate.push_back(PoligonAsset(rxlev, Mpol->getGeometryRef(j), id));
                     }
                     else {
                         std::cout << "Ќеопознанный тип геометрии" << std::endl;
@@ -392,7 +392,7 @@ int main() {
     //вот тут начинаетс€ работа
     
     std::cout << "¬сего полигонов из јссета: ";
-    std::cout << AssetDate.size() << std::endl;
+    std::cout << CoverDate.size() << std::endl;
     
     std::cout << "¬сего зданий: ";
     std::cout << BuildingDate.size() << std::endl;
@@ -404,18 +404,18 @@ int main() {
 
         for (auto iBuildingDate = BuildingDate.begin(); iBuildingDate != BuildingDate.end(); iBuildingDate++) {
             
-            auto poly = AssetDate.find(i);
+            //auto poly = CoverDate.find(i);
             
-            if ((*iBuildingDate).Polygon.Contains(&((*poly).second.Polygon)) || (*iBuildingDate).Polygon.Overlaps(&((*poly).second.Polygon)) || (*poly).second.Polygon.Contains(&((*iBuildingDate).Polygon))) {
+            //if ((*iBuildingDate).Polygon.Contains(&((*poly).second.Polygon)) || (*iBuildingDate).Polygon.Overlaps(&((*poly).second.Polygon)) || (*poly).second.Polygon.Contains(&((*iBuildingDate).Polygon))) {
             
 #pragma omp critical
                 {
                    // LinkPolyToBuild.insert(std::pair<int, int>(i, (*iBuildingDate).first));
                 }
-            }
+            //}
         }
     }
-    
+/*
     std::cout << "¬сего созданных линков: ";
     std::cout << LinkPolyToBuild.size() << std::endl;
 
@@ -431,7 +431,7 @@ int main() {
         if (LinkPolyToBuild.count(i) == 1) {
             auto PolyId = LinkPolyToBuild.find(i);
             //auto Build = BuildingDate.find((*PolyId).second);
-            auto PolyAss = AssetDate.find(i);
+            auto PolyAss = CoverDate.find(i);
 //#pragma omp critical
             {
                 (*Build).second.addArea((*PolyAss).second.RxLev, (*PolyAss).second.Polygon.get_Area());
@@ -439,8 +439,8 @@ int main() {
         }
         else {
             //если линкуемс€ к нескольким здани€м, то разбиваем полигон на части
-            OGRPolygon Polygon = (*(AssetDate.find(i))).second.Polygon;
-            double RxLev = (*(AssetDate.find(i))).second.RxLev;
+            OGRPolygon Polygon = (*(CoverDate.find(i))).second.Polygon;
+            double RxLev = (*(CoverDate.find(i))).second.RxLev;
 
             double MaxX = NULL;
             double MaxY = NULL;
@@ -617,8 +617,8 @@ int main() {
    
     polyfile << "Poly_id;RxLev;Area" << std::endl;
     
-    for (auto iAssetDate = AssetDate.begin(); iAssetDate != AssetDate.end(); iAssetDate++) {
-        polyfile << (*iAssetDate).first << ";" << (*iAssetDate).second.RxLev << ";" << (*iAssetDate).second.Polygon.get_Area() << std::endl;
+    for (auto iCoverDate = CoverDate.begin(); iCoverDate != CoverDate.end(); iCoverDate++) {
+        polyfile << (*iCoverDate).first << ";" << (*iCoverDate).second.RxLev << ";" << (*iCoverDate).second.Polygon.get_Area() << std::endl;
     }
     
     buildfile << "Building_id_cust;Building_id;RxLev_100;RxLev_113;RxLev_120" << std::endl;
@@ -669,12 +669,12 @@ int main() {
     write_kml_poly << "<kml xmlns = \"http://www.opengis.net/kml/2.2\" xmlns:gx = \"http://www.google.com/kml/ext/2.2\" xmlns:kml = \"http://www.opengis.net/kml/2.2\" xmlns:atom = \"http://www.w3.org/2005/Atom\"><Document>";
     write_kml_build << "<kml xmlns = \"http://www.opengis.net/kml/2.2\" xmlns:gx = \"http://www.google.com/kml/ext/2.2\" xmlns:kml = \"http://www.opengis.net/kml/2.2\" xmlns:atom = \"http://www.w3.org/2005/Atom\"><Document>";
 
-    for (auto iAssetDate = AssetDate.begin(); iAssetDate != AssetDate.end(); iAssetDate++) {
-        (*iAssetDate).second.Polygon.transformTo(&srTo);
-        write_kml_poly << "<Folder><name>" << (*iAssetDate).second.ID_poly << "</name>" << std::endl;
+    for (auto iCoverDate = CoverDate.begin(); iCoverDate != CoverDate.end(); iCoverDate++) {
+        (*iCoverDate).second.Polygon.transformTo(&srTo);
+        write_kml_poly << "<Folder><name>" << (*iCoverDate).second.ID_poly << "</name>" << std::endl;
         write_kml_poly << "<Placemark>";
-        (*iAssetDate).second.Polygon.swapXY();
-        write_kml_poly << (*iAssetDate).second.Polygon.exportToKML() << std::endl;
+        (*iCoverDate).second.Polygon.swapXY();
+        write_kml_poly << (*iCoverDate).second.Polygon.exportToKML() << std::endl;
         write_kml_poly << "</Placemark>";
         write_kml_poly << "</Folder>";
     }
@@ -697,7 +697,7 @@ int main() {
     linkfile.close();
     polyfile.close();
     buildfile.close();
-
+    */
     std::cout << "Time in seconds: " << ((clock() - start) / CLOCKS_PER_SEC) << std::endl;
 
     system("pause");
