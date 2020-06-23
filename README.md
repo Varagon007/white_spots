@@ -1,0 +1,2 @@
+# white_spots
+This project is for a mobile operator, by definition of recommended buildings for the construction of cellular base stations. The project uses 2 unloadings from the planning system with coating layers and buildings. At the first stage, an unambiguous correspondence is created between buildings and the area of poor coverage, taking into account the error in rendering a certain coating and other features.
