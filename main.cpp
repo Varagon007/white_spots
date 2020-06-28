@@ -1,286 +1,40 @@
 #include <iostream>
 #include <fstream>
-#include <string>
+#include <string.h>
 #include <map>
 #include <vector>
 #include "ogrsf_frmts.h"
 #include <omp.h>
+#include <set>
 #include <ctime>
+#include <chrono>
+#include <iomanip>
+#include <PoligonCover.h>
+#include <PoligonBuilding.h>
 
-class PoligonAsset {
-    static int ID_poly_gen;
-public:
-    int             ID_poly;
-    double          RxLev;
-    OGRPolygon      Polygon;
 
-    static int get_id() { return ID_poly_gen++; }
-
-    static int get_now_id() { return ID_poly_gen; }
-
-    PoligonAsset(double RxLev, OGRPolygon* Polygon) {
-        this->ID_poly = get_id();
-        this->RxLev = RxLev;
-        this->Polygon = *Polygon;
-    };
-
-    PoligonAsset(double RxLev, OGRPolygon* Polygon, int id) {
-        this->ID_poly = id;
-        this->RxLev = RxLev;
-        this->Polygon = *Polygon;
-    };
-
-    PoligonAsset(double RxLev, OGRPolygon Polygon) {
-        this->ID_poly = get_id();
-        this->RxLev = RxLev;
-        this->Polygon = Polygon;
-    };
-
-    PoligonAsset(double RxLev, OGRPolygon Polygon, int id) {
-        this->ID_poly = id;
-        this->RxLev = RxLev;
-        this->Polygon = Polygon;
-    };
-
-    PoligonAsset(double RxLev, OGRGeometry* Geometry) {
-        this->ID_poly = get_id();
-        this->RxLev = RxLev;
-        this->Polygon = *(OGRPolygon*)Geometry;
-    };
-
-    PoligonAsset(double RxLev, OGRGeometry* Geometry, int id) {
-        this->ID_poly = id;
-        this->RxLev = RxLev;
-        this->Polygon = *(OGRPolygon*)Geometry;
-    };
+void Read_Building(const char* InputFile,std::vector<PoligonBuilding> &BuildingDate) {
     
-};
-
-int PoligonAsset::ID_poly_gen = 0;
-
-class PoligonBuilding {
-public:
-    int         ID_build;
-    char        Type[50];
-    char        Wall_Mat[50];
-    double      Building;
-    int         Etage;
-    double      Area;
-    int         People_D;
-    int         People_N;
-    char        Volcano_type[50];
-    int         Clutter_num;
-    char        Clutter_type[50];
-    double      Lon; 
-    double      Lat;
-    char        Address_NP[150];
-    char        Address_street[100];
-    char        Address_number[10];
-    char        FIAS[200];
-    OGRPolygon    Polygon;
-    std::map<double, double> LevelArea;
-
-    void addArea(double RxLev, double Area) {
-        if (LevelArea.find(RxLev) == LevelArea.end()) {
-            LevelArea[RxLev] = Area;
-        }
-        else {
-            double buff = LevelArea[RxLev] + Area;
-            LevelArea[RxLev] = buff;
-        }
-    }
-
-    PoligonBuilding(
-                    int         ID_build,
-                    char*       Type,
-                    char*       Wall_Mat,
-                    double      Building,
-                    int         Etage,
-                    double      Area,
-                    int         People_D,
-                    int         People_N,
-                    char*       Volcano_type,
-                    int         Clutter_num,
-                    char*       Clutter_type,
-                    double      Lon,
-                    double      Lat,
-                    char*       Address_NP,
-                    char*       Address_street,
-                    char*       Address_number,
-                    char*       FIAS,
-                    OGRPolygon* Polygon
-                    ) {
-        this->ID_build = ID_build;
-        strcpy_s(this->Type, Type);
-        strcpy_s(this->Wall_Mat, Wall_Mat);
-        this->Building = Building;
-        this->Etage = Etage;
-        this->Area = Area;
-        this->People_D = People_D;
-        this->People_N = People_N;
-        strcpy_s(this->Volcano_type, Volcano_type);
-        this->Clutter_num = Clutter_num;
-        strcpy_s(this->Clutter_type, Clutter_type);
-        this->Lon = Lon;
-        this->Lat = Lat;
-        strcpy_s(this->Address_NP, Address_NP);
-        strcpy_s(this->Address_street, Address_street);
-        strcpy_s(this->Address_number, Address_number);
-        strcpy_s(this->FIAS, FIAS);
-        this->Polygon = *Polygon;
-    };
-    
-    PoligonBuilding(int         ID_build,
-                    char* Type,
-                    char* Wall_Mat,
-                    double      Building,
-                    int         Etage,
-                    double      Area,
-                    int         People_D,
-                    int         People_N,
-                    char* Volcano_type,
-                    int         Clutter_num,
-                    char* Clutter_type,
-                    double      Lon,
-                    double      Lat,
-                    char* Address_NP,
-                    char* Address_street,
-                    char* Address_number,
-                    char* FIAS,
-                    OGRGeometry* Geometry) {
-        this->ID_build = ID_build;
-        strcpy_s(this->Type, Type);
-        strcpy_s(this->Wall_Mat, Wall_Mat);
-        this->Building = Building;
-        this->Etage = Etage;
-        this->Area = Area;
-        this->People_D = People_D;
-        this->People_N = People_N;
-        strcpy_s(this->Volcano_type, Volcano_type);
-        this->Clutter_num = Clutter_num;
-        strcpy_s(this->Clutter_type, Clutter_type);
-        this->Lon = Lon;
-        this->Lat = Lat;
-        strcpy_s(this->Address_NP, Address_NP);
-        strcpy_s(this->Address_street, Address_street);
-        strcpy_s(this->Address_number, Address_number);
-        strcpy_s(this->FIAS, FIAS);
-        this->Polygon = *(OGRPolygon*)Geometry;
-    };
-    
-};
-
-
-int main() {
-
-    setlocale(LC_ALL, "Russian");
-    double start = clock();
-    std::vector<PoligonAsset> CoverDate;
-    std::vector<PoligonBuilding> BuildingDate;
-    int max_thread = omp_get_max_threads() - 1;
-    omp_set_num_threads(max_thread);
-    int Asset_step_m = 10;
-
-    std::ofstream   write_kml_poly, write_kml_build, linkfile, polyfile, buildfile;
-
-    write_kml_poly.open("respoly.kml");
-    write_kml_build.open("resbuild.kml");
-    linkfile.open("link.csv");
-    polyfile.open("poly.csv");
-    buildfile.open("build.csv");
-
-    double rxlev;
-    
-    GDALAllRegister();
-
     GDALDataset* poDS;
 
-    poDS = (GDALDataset*)GDALOpenEx("1.MIF", GDAL_OF_VECTOR, NULL, NULL, NULL);
+    poDS = (GDALDataset*)GDALOpenEx(InputFile, GDAL_OF_VECTOR, NULL, NULL, NULL);
     if (poDS == NULL)
     {
-        std::cout << "Open failed" << std::endl;
-        return 0;
+        throw "Файл не найден";
     }
 
     poDS->ResetReading();
 
     std::cout << "Всего слоев: " << poDS->GetLayerCount() << std::endl;
-    
+
     for (auto i = 0; i < poDS->GetLayerCount(); i++) {
 
         OGRLayer* poLayer = poDS->GetLayer(i);
         OGRFeature* poFeature;
         OGRFeatureDefn* poFDefn = poLayer->GetLayerDefn();
 
-
         while ((poFeature = poLayer->GetNextFeature()) != NULL) {
 
-            for (int iField = 0; iField < poFDefn->GetFieldCount(); iField++)
-            {
-                OGRFieldDefn* poFieldDefn = poFDefn->GetFieldDefn(iField);
-               
-                switch (poFieldDefn->GetType())
-                {
-                case OFTReal:
-                    rxlev = poFeature->GetFieldAsDouble(iField);
-                    break;
-                }
-            }
-
-            OGRGeometry* poGeometry = poFeature->GetGeometryRef();
-            
-            if (poGeometry != NULL && wkbFlatten(poGeometry->getGeometryType()) == wkbMultiPolygon) {
-
-                OGRMultiPolygon* Mpol = (OGRMultiPolygon*)poGeometry;
-
-                std::cout << "Rxlev: " << rxlev;
-                std::cout << " Total Area: " << Mpol->get_Area() << std::endl;
-
-                for (auto j = 0; j < Mpol->getNumGeometries(); j++) {
-
-                    if (Mpol->getGeometryRef(j) != NULL && 
-                        wkbFlatten(Mpol->getGeometryRef(j)->getGeometryType()) == wkbPolygon) {
-
-                        int id = PoligonAsset::get_id();
-
-                        CoverDate.push_back(PoligonAsset(rxlev, Mpol->getGeometryRef(j), id));
-                    }
-                    else {
-                        std::cout << "Неопознанный тип геометрии" << std::endl;
-                        std::cout << Mpol->getGeometryRef(j)->getGeometryName() << std::endl;
-
-                    }
-                }
-
-            }
-            
-            OGRFeature::DestroyFeature(poFeature);
-
-        }
-    }
-   
-    GDALClose(poDS);
-   
-    
-    poDS = (GDALDataset*)GDALOpenEx("B.MIF", GDAL_OF_VECTOR, NULL, NULL, NULL);
-    if (poDS == NULL)
-    {
-        std::cout << "Open failed" << std::endl;
-        return 0;
-    }
-    
-    poDS->ResetReading();
-
-    std::cout << "Всего слоев: " << poDS->GetLayerCount() << std::endl;
-
-    for (auto i = 0; i < poDS->GetLayerCount(); i++) {
-        
-        OGRLayer* poLayer = poDS->GetLayer(i);
-        OGRFeature* poFeature;
-        OGRFeatureDefn* poFDefn = poLayer->GetLayerDefn();
-
-        while ((poFeature = poLayer->GetNextFeature()) != NULL) {
-            
             int         ID_build;
             char        Type[50];
             char        Wall_Mat[50];
@@ -302,8 +56,8 @@ int main() {
             for (int iField = 0; iField < poFDefn->GetFieldCount(); iField++)
             {
                 OGRFieldDefn* poFieldDefn = poFDefn->GetFieldDefn(iField);
-               
-                if (strcmp(poFieldDefn->GetNameRef(),"ID_build")==0) {
+
+                if (strcmp(poFieldDefn->GetNameRef(), "ID_build") == 0) {
                     ID_build = poFeature->GetFieldAsInteger(iField);
                 }
 
@@ -372,75 +126,107 @@ int main() {
                 }
 
             }
-            
-            
+
+
             if (poFeature->GetGeometryRef() != NULL && wkbFlatten(poFeature->GetGeometryRef()->getGeometryType()) == wkbPolygon) {
-                
+
                 BuildingDate.push_back(PoligonBuilding(ID_build, Type, Wall_Mat, Building, Etage, Area, People_D, People_N, Volcano_type, Clutter_num, Clutter_type, Lon, Lat, Address_NP, Address_street, Address_number, FIAS, poFeature->GetGeometryRef()));
-                
+
             }
-            
+
             OGRFeature::DestroyFeature(poFeature);
-            
+
         }
 
     }
 
 
     GDALClose(poDS);
-    
-    //вот тут начинается работа
-    
-    std::cout << "Всего полигонов из Ассета: ";
-    std::cout << CoverDate.size() << std::endl;
-    
-    std::cout << "Всего зданий: ";
-    std::cout << BuildingDate.size() << std::endl;
+}
 
-    std::multimap <int, int> LinkPolyToBuild;
-    
-#pragma omp parallel for 
-    for (int i = 0; i < PoligonAsset::get_now_id(); i++){
+void Read_Cover(const char* InputFile, std::vector<PoligonCover>& CoverDate) {
 
-        for (auto iBuildingDate = BuildingDate.begin(); iBuildingDate != BuildingDate.end(); iBuildingDate++) {
-            
-            //auto poly = CoverDate.find(i);
-            
-            //if ((*iBuildingDate).Polygon.Contains(&((*poly).second.Polygon)) || (*iBuildingDate).Polygon.Overlaps(&((*poly).second.Polygon)) || (*poly).second.Polygon.Contains(&((*iBuildingDate).Polygon))) {
-            
-#pragma omp critical
+    GDALDataset* poDS;
+    double rxlev;
+
+    poDS = (GDALDataset*)GDALOpenEx(InputFile, GDAL_OF_VECTOR, NULL, NULL, NULL);
+    if (poDS == NULL)
+    {
+        throw "Файл не найден";
+    }
+
+    poDS->ResetReading();
+
+    std::cout << "Всего слоев: " << poDS->GetLayerCount() << std::endl;
+
+    for (auto i = 0; i < poDS->GetLayerCount(); i++) {
+
+        OGRLayer* poLayer = poDS->GetLayer(i);
+        OGRFeature* poFeature;
+        OGRFeatureDefn* poFDefn = poLayer->GetLayerDefn();
+
+
+        while ((poFeature = poLayer->GetNextFeature()) != NULL) {
+
+            for (int iField = 0; iField < poFDefn->GetFieldCount(); iField++)
+            {
+                OGRFieldDefn* poFieldDefn = poFDefn->GetFieldDefn(iField);
+
+                switch (poFieldDefn->GetType())
                 {
-                   // LinkPolyToBuild.insert(std::pair<int, int>(i, (*iBuildingDate).first));
+                case OFTReal:
+                    rxlev = poFeature->GetFieldAsDouble(iField);
+                    break;
                 }
-            //}
+            }
+
+            OGRGeometry* poGeometry = poFeature->GetGeometryRef();
+
+            if (poGeometry != NULL && wkbFlatten(poGeometry->getGeometryType()) == wkbMultiPolygon) {
+
+                OGRMultiPolygon* Mpol = (OGRMultiPolygon*)poGeometry;
+
+                //std::cout << "Rxlev: " << rxlev;
+                //std::cout << " Total Area: " << Mpol->get_Area() << std::endl;
+
+                for (auto j = 0; j < Mpol->getNumGeometries(); j++) {
+
+                    if (Mpol->getGeometryRef(j) != NULL &&
+                        wkbFlatten(Mpol->getGeometryRef(j)->getGeometryType()) == wkbPolygon) {
+
+                        int id = PoligonCover::get_id();
+
+                        CoverDate.push_back(PoligonCover(rxlev, Mpol->getGeometryRef(j), id));
+                    }
+                    else {
+                        std::cout << "Неопознанный тип геометрии" << std::endl;
+                        std::cout << Mpol->getGeometryRef(j)->getGeometryName() << std::endl;
+
+                    }
+                }
+
+            }
+
+            OGRFeature::DestroyFeature(poFeature);
+
         }
     }
-/*
-    std::cout << "Всего созданных линков: ";
-    std::cout << LinkPolyToBuild.size() << std::endl;
 
-    for (auto i = LinkPolyToBuild.begin(); i != LinkPolyToBuild.end(); i++) {
-        linkfile << (*i).first << ";" << (*i).second << std::endl;
-    }
+    GDALClose(poDS);
+}
 
-
-    linkfile << "Poly_id;Building_id" << std::endl;
-//#pragma omp parallel for
-    for (int i = 0; i < PoligonAsset::get_now_id(); i++) {
+void AddCoverToBuilding(int Floor , int Asset_step_m, std::vector<PoligonBuilding> &BuildingDate, std::vector<PoligonCover> &CoverDate, std::multimap <int, int> &LinkPolyToBuild) {
+    for (int i = 0; i < CoverDate.size(); i++) {
 
         if (LinkPolyToBuild.count(i) == 1) {
             auto PolyId = LinkPolyToBuild.find(i);
-            //auto Build = BuildingDate.find((*PolyId).second);
-            auto PolyAss = CoverDate.find(i);
-//#pragma omp critical
-            {
-                (*Build).second.addArea((*PolyAss).second.RxLev, (*PolyAss).second.Polygon.get_Area());
-            }
+            BuildingDate[(*PolyId).second].addArea(CoverDate[i].RxLev, CoverDate[i].Polygon.get_Area(), Floor);
         }
         else {
             //если линкуемся к нескольким зданиям, то разбиваем полигон на части
-            OGRPolygon Polygon = (*(CoverDate.find(i))).second.Polygon;
-            double RxLev = (*(CoverDate.find(i))).second.RxLev;
+
+            OGRPolygon Polygon = CoverDate[i].Polygon;
+            double RxLev = CoverDate[i].RxLev;
 
             double MaxX = NULL;
             double MaxY = NULL;
@@ -455,7 +241,7 @@ int main() {
             switch (wkbFlatten(Polygon.getBoundary()->getGeometryType())) {
             case wkbLineString:
 
-                Border = (OGRLineString*) Polygon.getBoundary();
+                Border = (OGRLineString*)Polygon.getBoundary();
 
                 for (int k = 0; k < Border->getNumPoints(); k++) {
                     if (MaxX < Border->getX(k) || MaxX == NULL) {
@@ -500,25 +286,20 @@ int main() {
                         }
                         break;
                     default:
-//#pragma omp critical
-                        {
-                            std::cout << "Неопознанный тип геометрии" << std::endl;
-                            std::cout << Borders->getGeometryRef(l)->getGeometryName() << std::endl;
-                        }
+                        std::cout << "Неопознанный тип геометрии" << std::endl;
+                        std::cout << Borders->getGeometryRef(l)->getGeometryName() << std::endl;
                         break;
                     }
                 }
 
                 break;
             default:
-//#pragma omp critical
-                {
-                    std::cout << "Неопознанный тип геометрии" << std::endl;
-                    std::cout << Polygon.getBoundary()->getGeometryName() << std::endl;
-                }
+                std::cout << "Неопознанный тип геометрии" << std::endl;
+                std::cout << Polygon.getBoundary()->getGeometryName() << std::endl;
                 break;
             }
 
+#pragma omp parallel for 
             for (double x = MinX; x < MaxX; x += Asset_step_m) {
                 for (double y = MinY; y < MaxY; y += Asset_step_m) {
 
@@ -535,7 +316,7 @@ int main() {
                     OGRPolygon buff;
                     buff.addRing(buffBorder.toCurve());
                     buff.assignSpatialReference(Polygon.getSpatialReference());
-                  
+
 
                     //если вырезанный полигон попадает в настоящий
                     if (Polygon.Contains(&buff))
@@ -547,8 +328,8 @@ int main() {
 
                             double S = Asset_step_m * Asset_step_m;
 
-                            auto BuildPoly = (*(BuildingDate.find((*j).second))).second.Polygon;
-                            int BuildID = (*(BuildingDate.find((*j).second))).first;
+                            auto BuildPoly = BuildingDate[(*j).second].Polygon;
+                            int BuildID = (*j).second;
 
                             if (BuildPoly.Contains(&buff) || buff.Contains(&BuildPoly)) {
                                 AreaBuildCover[S] = BuildID;
@@ -584,26 +365,24 @@ int main() {
                         }
 
                         if (AreaBuildCover.size() == 1) {
-//#pragma omp critical
+#pragma omp critical
                             {
-                                (*(BuildingDate.find((*(AreaBuildCover.begin())).second))).second.addArea(RxLev, Asset_step_m * Asset_step_m);
+                                BuildingDate[(*(AreaBuildCover.begin())).second].addArea(RxLev, Asset_step_m * Asset_step_m, Floor);
                             }
                         }
-
                         if (AreaBuildCover.size() > 1) {
-                            
-                            auto j = AreaBuildCover.end();
-                            j--;
-//#pragma omp critical
+#pragma omp critical
                             {
-                                (*(BuildingDate.find((*j).second))).second.addArea(RxLev, Asset_step_m * Asset_step_m);
+                                auto j = AreaBuildCover.end();
+                                j--;
+                                BuildingDate[(*j).second].addArea(RxLev, Asset_step_m * Asset_step_m, Floor); 
                             }
-                            
+
                         }
 
                         if (AreaBuildCover.size() == 0) {
                             std::cout << "ALARM" << std::endl;
-                            return 0;
+                            throw "ALARM";
                         }
                     }
 
@@ -614,91 +393,242 @@ int main() {
         }
 
     }
-   
-    polyfile << "Poly_id;RxLev;Area" << std::endl;
-    
-    for (auto iCoverDate = CoverDate.begin(); iCoverDate != CoverDate.end(); iCoverDate++) {
-        polyfile << (*iCoverDate).first << ";" << (*iCoverDate).second.RxLev << ";" << (*iCoverDate).second.Polygon.get_Area() << std::endl;
-    }
-    
-    buildfile << "Building_id_cust;Building_id;RxLev_100;RxLev_113;RxLev_120" << std::endl;
-    
-    for (auto iBuildingDate = BuildingDate.begin(); iBuildingDate != BuildingDate.end(); iBuildingDate++) {
-        buildfile << (*iBuildingDate).first << ";" << (*iBuildingDate).second.ID_build;
-        if ((*iBuildingDate).second.LevelArea.find(-100) != (*iBuildingDate).second.LevelArea.end())
-        {
-            buildfile << ";" << (*iBuildingDate).second.LevelArea[-100];
-        }
-        else {
-            buildfile << ";";
-        }
 
-        if ((*iBuildingDate).second.LevelArea.find(-113) != (*iBuildingDate).second.LevelArea.end())
-        {
-            buildfile << ";" << (*iBuildingDate).second.LevelArea[-113];
-        }
-        else {
-            buildfile << ";";
-        }
+}
 
-        if ((*iBuildingDate).second.LevelArea.find(-120) != (*iBuildingDate).second.LevelArea.end())
-        {
-            buildfile << ";" << (*iBuildingDate).second.LevelArea[-120];
-        }
-        else {
-            buildfile << ";";
-        }
-
-        buildfile << std::endl;
-    }
-    
+void OutKml(std::vector<PoligonCover> &CoverDate,std::string FileName) {
     
     OGRSpatialReference srTo;
 
     srTo.SetGeogCS("My geographic CRS",
-       "World Geodetic System 1984",
-       "My WGS84 Spheroid",
-       SRS_WGS84_SEMIMAJOR, SRS_WGS84_INVFLATTENING,
-       "Greenwich", 0.0,
-       "degree", 0.0174532925199433);
-   
-   
-    write_kml_poly << "<?xml version = \"1.0\" encoding = \"UTF-8\"?>";
-    write_kml_build << "<?xml version = \"1.0\" encoding = \"UTF-8\"?>";
+        "World Geodetic System 1984",
+        "My WGS84 Spheroid",
+        SRS_WGS84_SEMIMAJOR, SRS_WGS84_INVFLATTENING,
+        "Greenwich", 0.0,
+        "degree", 0.0174532925199433);
 
-    write_kml_poly << "<kml xmlns = \"http://www.opengis.net/kml/2.2\" xmlns:gx = \"http://www.google.com/kml/ext/2.2\" xmlns:kml = \"http://www.opengis.net/kml/2.2\" xmlns:atom = \"http://www.w3.org/2005/Atom\"><Document>";
-    write_kml_build << "<kml xmlns = \"http://www.opengis.net/kml/2.2\" xmlns:gx = \"http://www.google.com/kml/ext/2.2\" xmlns:kml = \"http://www.opengis.net/kml/2.2\" xmlns:atom = \"http://www.w3.org/2005/Atom\"><Document>";
+    std::ofstream   write;
 
-    for (auto iCoverDate = CoverDate.begin(); iCoverDate != CoverDate.end(); iCoverDate++) {
-        (*iCoverDate).second.Polygon.transformTo(&srTo);
-        write_kml_poly << "<Folder><name>" << (*iCoverDate).second.ID_poly << "</name>" << std::endl;
-        write_kml_poly << "<Placemark>";
-        (*iCoverDate).second.Polygon.swapXY();
-        write_kml_poly << (*iCoverDate).second.Polygon.exportToKML() << std::endl;
-        write_kml_poly << "</Placemark>";
-        write_kml_poly << "</Folder>";
+    std::string file = FileName;
+    file += ".kml";
+
+    write.open(file);
+
+    write << "<?xml version = \"1.0\" encoding = \"UTF-8\"?>";
+    write << "<kml xmlns = \"http://www.opengis.net/kml/2.2\" xmlns:gx = \"http://www.google.com/kml/ext/2.2\" xmlns:kml = \"http://www.opengis.net/kml/2.2\" xmlns:atom = \"http://www.w3.org/2005/Atom\"><Document>";
+
+    for (size_t i = 0; i < CoverDate.size(); i++) {
+        CoverDate[i].Polygon.transformTo(&srTo);
+        write << "<Folder><name>" << CoverDate[i].ID_poly << "</name>" << std::endl;
+        write << "<Placemark>";
+        CoverDate[i].Polygon.swapXY();
+        write << CoverDate[i].Polygon.exportToKML() << std::endl;
+        write << "</Placemark>";
+        write << "</Folder>";
     }
 
-    for (auto iBuildingDate = BuildingDate.begin(); iBuildingDate != BuildingDate.end(); iBuildingDate++) {
-        (*iBuildingDate).second.Polygon.transformTo(&srTo);
-        write_kml_build << "<Folder><name>" << (*iBuildingDate).first << "</name>" << std::endl;
-        write_kml_build << "<Placemark>";
-        (*iBuildingDate).second.Polygon.swapXY();
-        write_kml_build << (*iBuildingDate).second.Polygon.exportToKML() << std::endl;
-        write_kml_build << "</Placemark>";
-        write_kml_build << "</Folder>";
-    }
+    write << "</Document></kml>";
 
-    write_kml_poly << "</Document></kml>";
-    write_kml_build << "</Document></kml>";
+    write.close();
+}
+
+void OutKml(std::vector<PoligonBuilding> &BuildingDate, const char* FileName) {
     
-    write_kml_poly.close();
-    write_kml_build.close();
-    linkfile.close();
+    if (BuildingDate.size() == 0) {
+        return;
+    }
+
+    OGRSpatialReference srTo, basic;
+
+    srTo.SetGeogCS("My geographic CRS",
+        "World Geodetic System 1984",
+        "My WGS84 Spheroid",
+        SRS_WGS84_SEMIMAJOR, SRS_WGS84_INVFLATTENING,
+        "Greenwich", 0.0,
+        "degree", 0.0174532925199433);
+
+    std::ofstream   write;
+
+    std::string file = FileName;
+    file += ".kml";
+
+    write.open(file);
+
+    write << "<?xml version = \"1.0\" encoding = \"UTF-8\"?>";
+    write << "<kml xmlns = \"http://www.opengis.net/kml/2.2\" xmlns:gx = \"http://www.google.com/kml/ext/2.2\" xmlns:kml = \"http://www.opengis.net/kml/2.2\" xmlns:atom = \"http://www.w3.org/2005/Atom\"><Document>";
+
+    for (size_t i = 0; i < BuildingDate.size(); i++) {
+        basic.SetGeocCS(BuildingDate[i].Polygon.getSpatialReference()->GetName());
+        BuildingDate[i].Polygon.transformTo(&srTo);
+        write << "<Folder><name>" << i << "</name>" << std::endl;
+        write << "<Placemark>";
+        BuildingDate[i].Polygon.swapXY();
+        write << BuildingDate[i].Polygon.exportToKML() << std::endl;
+        write << "</Placemark>";
+        write << "</Folder>";
+        //BuildingDate[i].Polygon.transformTo(&basic);
+    }
+
+    write << "</Document></kml>";
+    write.close();
+}
+
+void calcBadAreaByCover(std::vector<PoligonBuilding> &BuildingDate, const char* filename, int Floor, int Asset_step_m = 10) {
+
+    std::vector<PoligonCover> CoverDate;
+    std::ofstream   linkfile, polyfile;
+
+    std::string buff = filename;
+
+    linkfile.open(buff + "_link.csv");
+    polyfile.open(buff + ".csv");
+
+    try {
+        Read_Cover(filename, CoverDate);
+    }
+    catch (const char* a) {
+        std::cout << a << std::endl;
+    }
+
+    //вот тут начинается работа
+
+    std::cout << "Всего полигонов на " << Floor << " этаже: ";
+    std::cout << CoverDate.size() << std::endl;
+
+    polyfile << "Poly_id;RxLev;Area" << std::endl;
+
+    for (size_t i = 0; i < CoverDate.size(); i++) {
+        polyfile << i << ";" << CoverDate[i].RxLev << ";" << CoverDate[i].Polygon.get_Area() << std::endl;
+    }
+
     polyfile.close();
+
+    std::multimap <int, int> LinkPolyToBuild;
+
+#pragma omp parallel for 
+    for (int i = 0; i < CoverDate.size(); i++) {
+
+        for (int j = 0; j < BuildingDate.size(); j++) {
+
+            if (BuildingDate[j].Polygon.Intersect(&(CoverDate[i].Polygon)) || BuildingDate[j].Polygon.Contains(&(CoverDate[i].Polygon)) || BuildingDate[j].Polygon.Overlaps(&(CoverDate[i].Polygon)) || CoverDate[i].Polygon.Contains(&(BuildingDate[j].Polygon)) || CoverDate[i].Polygon.Overlaps(&(BuildingDate[j].Polygon))) {
+
+#pragma omp critical
+                {
+                    LinkPolyToBuild.insert(std::pair<int, int>(i, j));
+                }
+            }
+        }
+    }
+
+    std::cout << "Всего созданных линков на " << Floor << " этаже: ";
+    std::cout << LinkPolyToBuild.size() << std::endl;
+
+    linkfile << "Poly_id;Building_id" << std::endl;
+
+    for (auto i = LinkPolyToBuild.begin(); i != LinkPolyToBuild.end(); i++) {
+        linkfile << (*i).first << ";" << (*i).second << std::endl;
+    }
+
+    linkfile.close();
+
+    try {
+        AddCoverToBuilding(Floor, Asset_step_m, BuildingDate, CoverDate, LinkPolyToBuild);
+        std::string Out_file;
+        Out_file = "poly_floor_" + std::to_string(Floor);
+        OutKml(CoverDate, Out_file);
+        CoverDate.erase(CoverDate.begin(), CoverDate.end());
+        LinkPolyToBuild.erase(LinkPolyToBuild.begin(), LinkPolyToBuild.end());
+    }
+    catch (const char* a) {
+        std::cout << a << std::endl;
+    }
+
+}
+
+int main() {
+
+    setlocale(LC_ALL, "Russian");
+    time_t rawtime;
+    struct tm* timeinfo;
+    
+    time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    std::cout << "Старт: " << std::put_time(localtime(&now), "%F %T") << std::endl;
+
+    double start = clock();
+    
+
+    std::vector<PoligonBuilding> BuildingDate;
+    int max_thread = omp_get_max_threads() - 1;
+    omp_set_num_threads(max_thread);
+    int Asset_step_m = 10;
+    
+    std::ofstream   buildfile;
+
+    buildfile.open("build.csv");
+
+    GDALAllRegister();
+
+    try {
+        Read_Building("B.MIF", BuildingDate);
+    }
+    catch (const char* a) {
+        std::cout << a << std::endl;
+    }
+    
+    std::cout << "Всего зданий: ";
+    std::cout << BuildingDate.size() << std::endl;
+
+
+    calcBadAreaByCover(BuildingDate, "1.MIF", 1, Asset_step_m);
+    calcBadAreaByCover(BuildingDate, "4.MIF", 4, Asset_step_m);
+    calcBadAreaByCover(BuildingDate, "7.MIF", 7, Asset_step_m);
+
+
+    buildfile << "Building_id_cust;Building_id;Lat;Lon;height";
+    
+    std::set<double> LevelList = PoligonBuilding::getLevel();
+
+    for (auto iLevelList = LevelList.begin(); iLevelList != LevelList.end(); iLevelList++) {
+        buildfile << ";RXLev_" << (*iLevelList);
+    }
+    
+    buildfile << std::endl;
+
+    for (size_t i = 0; i < BuildingDate.size(); i++) {
+
+        buildfile << i << ";" << BuildingDate[i].ID_build << ";" << BuildingDate[i].Lat << ";" << BuildingDate[i].Lon << ";" << BuildingDate[i].Building;
+
+        for (auto iLevelList = LevelList.begin(); iLevelList != LevelList.end(); iLevelList++) {
+
+            if (BuildingDate[i].LevelArea.find((*iLevelList)) != BuildingDate[i].LevelArea.end())
+            {
+                buildfile << ";" << BuildingDate[i].LevelArea[(*iLevelList)];
+            }
+            else {
+                buildfile << ";";
+            }
+
+        }
+        buildfile << std::endl;
+    }
+    
     buildfile.close();
-    */
-    std::cout << "Time in seconds: " << ((clock() - start) / CLOCKS_PER_SEC) << std::endl;
+
+    std::cout << BuildingDate[0].Polygon.get_Area() << std::endl;
+
+    OutKml(BuildingDate, "building");
+
+    std::cout << BuildingDate[0].Polygon.get_Area() << std::endl;
+
+    now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    std::cout << "Финиш: " << std::put_time(localtime(&now), "%F %T") << std::endl;
+
+    double tt = ((clock() - start) / CLOCKS_PER_SEC);
+    int hh = trunc(tt / 3600);
+    int mi = trunc((tt - hh * 3600)/60);
+    int ss = tt - 3600 * hh - mi * 60;
+    std::cout << "Затраченное время: " << hh << " часов " << mi << " минут " << ss << " секунд" << std::endl;
+    std::cout << "Затраченное время (в секундах): " << tt << std::endl;
 
     system("pause");
 
