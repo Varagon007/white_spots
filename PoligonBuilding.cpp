@@ -78,4 +78,32 @@ void PoligonBuilding::addArea(double RxLev, double Area, int Floor) {
     }
 
     PoligonBuilding::addLevel(RxLev);
-};
+}
+void PoligonBuilding::createWeight()
+{
+    for (auto iLevelArea = LevelArea.begin(); iLevelArea != LevelArea.end(); iLevelArea++) {
+        if ((*iLevelArea).first == -113){
+            Weight += (*iLevelArea).second * 0.05;
+        }
+        if ((*iLevelArea).first == -120) {
+            Weight += (*iLevelArea).second * 0.5;
+        }
+        if ((*iLevelArea).first == -200) {
+            Weight += (*iLevelArea).second * 1;
+        }
+    }
+}
+void PoligonBuilding::changeWeight(double WeightIn)
+{
+    if (WeightIn < 0 && fabs(WeightIn) > Weight) {
+        Weight = 0;
+    }
+    else {
+        Weight += WeightIn;
+    }
+}
+double PoligonBuilding::getWeight()
+{
+    return this->Weight;
+}
+

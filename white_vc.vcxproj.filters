@@ -24,12 +24,18 @@
     <ClCompile Include="PoligonBuilding.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="BSonBuilding.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PoligonCover.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
     <ClInclude Include="PoligonBuilding.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="BSonBuilding.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>

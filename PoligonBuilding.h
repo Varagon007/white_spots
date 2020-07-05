@@ -6,9 +6,17 @@
 
 class PoligonBuilding
 {
+private:
+    double Weight = 0;
+
 protected:
     static std::set<double> LevelList;
     double getAddArea(double RxLev, double Area, int k);
+
+    static void addLevel(double RxLev) {
+        LevelList.insert(RxLev);
+    };
+
 public:
     int         ID_build;
     char        Type[50];
@@ -27,20 +35,24 @@ public:
     char        Address_street[100];
     char        Address_number[10];
     char        FIAS[200];
-    OGRPolygon    Polygon;
+    OGRPolygon  Polygon;
+    OGRPoint    PointCenter;
 
     std::map<double, double> LevelArea;
-
-    static void addLevel(double RxLev) {
-        LevelList.insert(RxLev);
-    };
-
+        
     static std::set<double> getLevel() {
         return LevelList;
     };
-
-
+    
     void addArea(double RxLev, double Area, int Floor);
+
+    void createWeight();
+
+    void changeWeight(double WeightIn);
+
+    double getWeight();
+
+    PoligonBuilding() {};
 
     PoligonBuilding(
         int         ID_build,
@@ -80,6 +92,7 @@ public:
         strcpy_s(this->Address_number, Address_number);
         strcpy_s(this->FIAS, FIAS);
         this->Polygon = *Polygon;
+        this->Polygon.Centroid(&this->PointCenter);
     };
 
     PoligonBuilding(int         ID_build,
@@ -118,6 +131,7 @@ public:
         strcpy_s(this->Address_number, Address_number);
         strcpy_s(this->FIAS, FIAS);
         this->Polygon = *(OGRPolygon*)Geometry;
+        this->Polygon.Centroid(&this->PointCenter);
     };
 };
 

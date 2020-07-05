@@ -151,11 +151,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BSonBuilding.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PoligonBuilding.cpp" />
     <ClCompile Include="PoligonCover.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BSonBuilding.h" />
     <ClInclude Include="PoligonBuilding.h" />
     <ClInclude Include="PoligonCover.h" />
   </ItemGroup>

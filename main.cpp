@@ -9,8 +9,10 @@
 #include <ctime>
 #include <chrono>
 #include <iomanip>
+#include <algorithm>
 #include <PoligonCover.h>
 #include <PoligonBuilding.h>
+#include <BSonBuilding.h>
 
 
 void Read_Building(const char* InputFile,std::vector<PoligonBuilding> &BuildingDate) {
@@ -300,7 +302,7 @@ void AddCoverToBuilding(int Floor , int Asset_step_m, std::vector<PoligonBuildin
             }
 
 #pragma omp parallel for 
-            for (double x = MinX; x < MaxX; x += Asset_step_m) {
+            for (int x = trunc(MinX); x < (int)ceil(MaxX); x += Asset_step_m) {
                 for (double y = MinY; y < MaxY; y += Asset_step_m) {
 
                     OGRLinearRing buffBorder;
@@ -396,8 +398,10 @@ void AddCoverToBuilding(int Floor , int Asset_step_m, std::vector<PoligonBuildin
 
 }
 
-void OutKml(std::vector<PoligonCover> &CoverDate,std::string FileName) {
+void OutKml(std::vector<PoligonCover> &CoverDateIn,std::string FileName) {
     
+    std::vector<PoligonCover> CoverDate(CoverDateIn);
+
     OGRSpatialReference srTo;
 
     srTo.SetGeogCS("My geographic CRS",
@@ -432,11 +436,13 @@ void OutKml(std::vector<PoligonCover> &CoverDate,std::string FileName) {
     write.close();
 }
 
-void OutKml(std::vector<PoligonBuilding> &BuildingDate, const char* FileName) {
+void OutKml(std::vector<PoligonBuilding> &BuildingDateIn, const char* FileName) {
     
-    if (BuildingDate.size() == 0) {
+    if (BuildingDateIn.size() == 0) {
         return;
     }
+
+    std::vector<PoligonBuilding> BuildingDate(BuildingDateIn);
 
     OGRSpatialReference srTo, basic;
 
@@ -474,6 +480,12 @@ void OutKml(std::vector<PoligonBuilding> &BuildingDate, const char* FileName) {
 }
 
 void calcBadAreaByCover(std::vector<PoligonBuilding> &BuildingDate, const char* filename, int Floor, int Asset_step_m = 10) {
+
+
+    time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    double start = clock();
+
+    std::cout << "Загрузка порытия " << Floor << " этажа: " << std::put_time(localtime(&now), "%F %T") << std::endl;
 
     std::vector<PoligonCover> CoverDate;
     std::ofstream   linkfile, polyfile;
@@ -543,55 +555,31 @@ void calcBadAreaByCover(std::vector<PoligonBuilding> &BuildingDate, const char* 
         std::cout << a << std::endl;
     }
 
+    now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    std::cout << "Загрузка порытия " << Floor << " этажа (Завершено): " << std::put_time(localtime(&now), "%F %T") << std::endl;
+
+    double tt = ((clock() - start) / CLOCKS_PER_SEC);
+    int hh = trunc(tt / 3600);
+    int mi = trunc((tt - hh * 3600) / 60);
+    int ss = tt - 3600 * hh - mi * 60;
+    std::cout << "Затраченное время: " << hh << " часов " << mi << " минут " << ss << " секунд" << std::endl;
+    std::cout << "Затраченное время (в секундах): " << tt << std::endl;
 }
 
-int main() {
+void OutFile(std::vector<PoligonBuilding> &BuildingDate) {
 
-    setlocale(LC_ALL, "Russian");
-    time_t rawtime;
-    struct tm* timeinfo;
-    
-    time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    std::cout << "Старт: " << std::put_time(localtime(&now), "%F %T") << std::endl;
-
-    double start = clock();
-    
-
-    std::vector<PoligonBuilding> BuildingDate;
-    int max_thread = omp_get_max_threads() - 1;
-    omp_set_num_threads(max_thread);
-    int Asset_step_m = 10;
-    
-    std::ofstream   buildfile;
+    std::ofstream buildfile;
 
     buildfile.open("build.csv");
 
-    GDALAllRegister();
-
-    try {
-        Read_Building("B.MIF", BuildingDate);
-    }
-    catch (const char* a) {
-        std::cout << a << std::endl;
-    }
-    
-    std::cout << "Всего зданий: ";
-    std::cout << BuildingDate.size() << std::endl;
-
-
-    calcBadAreaByCover(BuildingDate, "1.MIF", 1, Asset_step_m);
-    calcBadAreaByCover(BuildingDate, "4.MIF", 4, Asset_step_m);
-    calcBadAreaByCover(BuildingDate, "7.MIF", 7, Asset_step_m);
-
-
     buildfile << "Building_id_cust;Building_id;Lat;Lon;height";
-    
+
     std::set<double> LevelList = PoligonBuilding::getLevel();
 
     for (auto iLevelList = LevelList.begin(); iLevelList != LevelList.end(); iLevelList++) {
         buildfile << ";RXLev_" << (*iLevelList);
     }
-    
+
     buildfile << std::endl;
 
     for (size_t i = 0; i < BuildingDate.size(); i++) {
@@ -611,14 +599,198 @@ int main() {
         }
         buildfile << std::endl;
     }
-    
+
     buildfile.close();
+}
 
-    std::cout << BuildingDate[0].Polygon.get_Area() << std::endl;
+void OutFile(std::vector<BSonBuilding> &BSDate) {
 
+    std::ofstream bsfile;
+
+    bsfile.open("bslist.csv");
+
+    bsfile << "ID_bs;Lat;Lon;Weight" << std::endl;
+
+    for (size_t i = 0; i < BSDate.size(); i++) {
+        bsfile << i << ";" << BSDate[i].Lat << ";" << BSDate[i].Lon << ";" << BSDate[i].getWeight();
+
+        for (auto j = BSDate[i].LinkToBuilding.begin(); j != BSDate[i].LinkToBuilding.end(); j++) {
+            bsfile << ";" << (*j);
+        }
+
+        bsfile << std::endl;
+    }
+
+    bsfile.close();
+
+}
+
+int main() {
+
+    std::vector<PoligonBuilding> BuildingDate;
+    std::vector<BSonBuilding> BSDate;
+    int max_thread = omp_get_max_threads() - 1;
+    omp_set_num_threads(max_thread);
+    //шаг ассета
+    int Asset_step_m = 10;
+    //уровень с которого строится БС
+    int RxLevBad = -113;
+    //радиус шайбы
+    double R = 250;
+    //файлы с покрытием, сейчас принимает 1/4/7 этажи
+    std::vector<std::pair<const char*, int>> CoverFile = {
+        std::pair<const char*, int>("1.MIF", 1),
+        std::pair<const char*, int>("4.MIF", 4),
+        std::pair<const char*, int>("7.MIF", 4)
+    };
+
+    setlocale(LC_ALL, "Russian");
+
+    time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    std::cout << "Старт: " << std::put_time(localtime(&now), "%F %T") << std::endl;
+
+    double start = clock();
+
+    GDALAllRegister();
+
+    try {
+        Read_Building("B.MIF", BuildingDate);
+    }
+    catch (const char* a) {
+        std::cout << a << std::endl;
+    }
+
+    std::cout << "Всего зданий: ";
+    std::cout << BuildingDate.size() << std::endl;
+
+
+    calcBadAreaByCover(BuildingDate, "1.MIF", 1, Asset_step_m);
+    //calcBadAreaByCover(BuildingDate, "4.MIF", 4, Asset_step_m);
+    //calcBadAreaByCover(BuildingDate, "7.MIF", 7, Asset_step_m);
+
+    OutFile(BuildingDate);
+    
     OutKml(BuildingDate, "building");
 
-    std::cout << BuildingDate[0].Polygon.get_Area() << std::endl;
+    //создаем массив 
+    std::cout << "Заполняем вес исходных зданий и формируем список БС кандидатов" << BSDate.size() << std::endl;
+    for (size_t i = 0; i < BuildingDate.size(); i++) {
+        auto LevelList = PoligonBuilding::getLevel();
+        for (auto iLevelList = LevelList.begin(); iLevelList != LevelList.end(); iLevelList++) {
+            if ((*iLevelList) <= RxLevBad) {
+                if (BuildingDate[i].LevelArea.find((*iLevelList)) != BuildingDate[i].LevelArea.end()) {
+                    BSonBuilding buff;
+                    buff = BuildingDate[i];
+                    BSDate.push_back(buff);
+                    break;
+                }
+            }
+        }
+        BuildingDate[i].createWeight();
+    }
+
+    std::cout << "Зданий кандидатов: " << BSDate.size() << std::endl;
+
+    for (size_t i = 0; i < BSDate.size(); i++) {
+        for (size_t j = 0; j < BuildingDate.size(); j++) {
+            double Rbuff = BSDate[i].PointCenter.Distance(&BuildingDate[j].PointCenter);
+            if (Rbuff <= 2 * R) {
+                if (Rbuff <= R) {
+                    BSDate[i].addWeight(BuildingDate[j].getWeight(), i, j);
+                }
+                else {
+                    BSDate[i].addWeight(BuildingDate[j].getWeight() * pow(R / Rbuff, 10), i, j);
+                }
+            }
+        }
+    }
+
+    OutFile(BSDate);
+
+    std::cout << "Выборка топ: Старт" << std::endl;
+
+    std::ofstream bsfile;
+
+    bsfile.open("bslist_filter.csv");
+
+    bsfile << "ID_bs;Lat;Lon;Weight" << std::endl;
+
+    std::cout << "Предварительная сортировка" << std::endl;
+
+    sort(BSDate.begin(), BSDate.end(), [](BSonBuilding a, BSonBuilding b) {
+        return a > b;
+        });
+ 
+    size_t i = 0;
+    
+    for (auto iBSDate = BSDate.begin(); iBSDate != BSDate.end(); iBSDate++, i++) {
+
+        std::cout << "Опредедение Топ " << i << std::endl;
+
+        std::cout << i << std::endl;
+
+        bsfile << i << ";" << BSDate[i].Lat << ";" << BSDate[i].Lon << ";" << BSDate[i].getWeight();
+
+        bsfile << std::endl;
+
+        if ((*iBSDate).getWeight() == 0) {
+            break;
+        }
+
+        for (auto iLinkToBuilding = (*iBSDate).LinkToBuilding.begin(); iLinkToBuilding != (*iBSDate).LinkToBuilding.end(); iLinkToBuilding++) {
+
+            double Rbuff = (*iBSDate).PointCenter.Distance(&BuildingDate[(*iLinkToBuilding)].PointCenter);
+            double weightOut = 0;
+            double weightNow = BuildingDate[(*iLinkToBuilding)].getWeight();
+
+            if (Rbuff <= 2 * R) {
+                if (Rbuff <= R) {
+                    weightOut = BuildingDate[(*iLinkToBuilding)].getWeight();
+                }
+                else {
+                    weightOut = BuildingDate[(*iLinkToBuilding)].getWeight() * pow(R / Rbuff, 10);
+                }
+            }
+            
+            double ProcWeight = weightOut / weightNow;
+            
+            auto bslinked = BSonBuilding::BuildingtoBS.equal_range((*iLinkToBuilding));
+            
+            for (auto ibslinked = bslinked.first; ibslinked != bslinked.second; ibslinked++) {
+                
+                double Rbuff2 = BuildingDate[(*iLinkToBuilding)].PointCenter.Distance(&BSDate[(*ibslinked).second].PointCenter);
+                
+                double weightNow2 = 0;
+
+                if (Rbuff2 <= 2 * R) {
+                    if (Rbuff2 <= R) {
+                        weightNow2 = BuildingDate[(*iLinkToBuilding)].getWeight();
+                    }
+                    else {
+                        weightNow2 = BuildingDate[(*iLinkToBuilding)].getWeight() * pow(R / Rbuff2, 10);
+                    }
+                }
+
+                double weightOut2 = weightNow2 * ProcWeight;
+
+                BSDate[(*ibslinked).second].changeWeight(-weightOut2);
+            
+            }
+
+            BuildingDate[(*iLinkToBuilding)].changeWeight(-weightOut);
+
+
+        }
+
+        std::cout << "Сортировка для поиска следующего топ" << std::endl;
+
+        sort(iBSDate, BSDate.end(), [](BSonBuilding a, BSonBuilding b) {
+            return a > b;
+        });
+
+    }
+
+    bsfile.close();
 
     now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     std::cout << "Финиш: " << std::put_time(localtime(&now), "%F %T") << std::endl;
@@ -627,6 +799,7 @@ int main() {
     int hh = trunc(tt / 3600);
     int mi = trunc((tt - hh * 3600)/60);
     int ss = tt - 3600 * hh - mi * 60;
+
     std::cout << "Затраченное время: " << hh << " часов " << mi << " минут " << ss << " секунд" << std::endl;
     std::cout << "Затраченное время (в секундах): " << tt << std::endl;
 
