@@ -2,6 +2,8 @@
 
 std::set<double> PoligonBuilding::LevelList{};
 
+int PoligonBuilding::ID_build_custom_gen = 0;
+
 double PoligonBuilding::getAddArea(double RxLev, double Area, int k = 1) {
     double buff;
     if (LevelArea.find(RxLev) == LevelArea.end()) {

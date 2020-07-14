@@ -8,6 +8,8 @@ class PoligonBuilding
 {
 private:
     double Weight = 0;
+    int ID_build_custom;
+    static int ID_build_custom_gen;
 
 protected:
     static std::set<double> LevelList;
@@ -18,6 +20,7 @@ protected:
     };
 
 public:
+    
     int         ID_build;
     char        Type[50];
     char        Wall_Mat[50];
@@ -49,6 +52,8 @@ public:
     void createWeight();
 
     void changeWeight(double WeightIn);
+
+    static int getId();
 
     double getWeight();
 

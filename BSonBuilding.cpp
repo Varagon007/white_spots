@@ -2,26 +2,31 @@
 
 std::multimap <int, int> BSonBuilding::BuildingtoBS;
 
-void BSonBuilding::addWeight(double WeightIn, int IdBSCustom, int IdBuildCustom)
+void BSonBuilding::addWeight(double WeightIn, PoligonBuilding* Build_in, int IdBSCustom, int IdBuildCustom)
 {
-    Weight += WeightIn;
-    LinkToBuilding.insert(IdBuildCustom);
-    BSonBuilding::addLink(IdBuildCustom, IdBSCustom);
+    BSWeight += WeightIn;
+    if (Build_in->getWeight() == 0) {
+        LinkToBuilding.insert(std::pair<double, PoligonBuilding*>(0, Build_in));
+    }
+    else {
+        LinkToBuilding.insert(std::pair<double, PoligonBuilding*>(WeightIn / (Build_in->getWeight()), Build_in));
+    }
+    BSonBuilding::addLink(IdBSCustom, IdBuildCustom);
 }
 
 void BSonBuilding::changeWeight(double WeightIn)
 {
-    if (WeightIn < 0 && fabs(WeightIn) >= Weight) {
-        Weight = 0;
+    if (WeightIn < 0 && fabs(WeightIn) >= BSWeight) {
+        BSWeight = 0;
     }
     else {
-        Weight += WeightIn;
+        BSWeight += WeightIn;
     }
 }
 
 double BSonBuilding::getWeight()
 {
-    return Weight;
+    return BSWeight;
 }
 
 BSonBuilding BSonBuilding::operator=(const PoligonBuilding& rv)

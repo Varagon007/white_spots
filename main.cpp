@@ -420,11 +420,39 @@ void OutKml(std::vector<PoligonCover> &CoverDateIn,std::string FileName) {
 
     write << "<?xml version = \"1.0\" encoding = \"UTF-8\"?>";
     write << "<kml xmlns = \"http://www.opengis.net/kml/2.2\" xmlns:gx = \"http://www.google.com/kml/ext/2.2\" xmlns:kml = \"http://www.opengis.net/kml/2.2\" xmlns:atom = \"http://www.w3.org/2005/Atom\"><Document>";
+    write << "<Style id=\"NSff50b000\"><IconStyle><color>ff00ff00</color><scale>1</scale><Icon><href>http://maps.google.com/mapfiles/kml/shapes/polygon.png</href></Icon></IconStyle><LabelStyle><color>ffffffff</color><colorMode>normal</colorMode><scale>0.8</scale></LabelStyle><LineStyle><color>ff50b000</color><colorMode>normal</colorMode><width>1</width></LineStyle><PolyStyle><color>ff50b000</color><outline>1</outline></PolyStyle></Style>"
+        << "<Style id=\"HSff50b000\"><IconStyle><color>ff00ff00</color><scale>1</scale><Icon><href>http://maps.google.com/mapfiles/kml/shapes/polygon.png</href></Icon></IconStyle><LabelStyle><color>ffffffff</color><colorMode>normal</colorMode><scale>0.8</scale></LabelStyle><LineStyle><color>ff00ffff</color><colorMode>normal</colorMode><width>2</width></LineStyle><PolyStyle><color>ff50b000</color><outline>1</outline></PolyStyle></Style>"
+        << "<Style id=\"NSff00ffff\"><IconStyle><color>ff00ff00</color><scale>1</scale><Icon><href>http://maps.google.com/mapfiles/kml/shapes/polygon.png</href></Icon></IconStyle><LabelStyle><color>ffffffff</color><colorMode>normal</colorMode><scale>0.8</scale></LabelStyle><LineStyle><color>ff00ffff</color><colorMode>normal</colorMode><width>1</width></LineStyle><PolyStyle><color>ff00ffff</color><outline>1</outline></PolyStyle></Style>"
+        << "<Style id=\"HSff00ffff\"><IconStyle><color>ff00ff00</color><scale>1</scale><Icon><href>http://maps.google.com/mapfiles/kml/shapes/polygon.png</href></Icon></IconStyle><LabelStyle><color>ffffffff</color><colorMode>normal</colorMode><scale>0.8</scale></LabelStyle><LineStyle><color>ff00ffff</color><colorMode>normal</colorMode><width>2</width></LineStyle><PolyStyle><color>ff00ffff</color><outline>1</outline></PolyStyle></Style>"
+        << "<Style id=\"NSff262626\"><IconStyle><color>ff00ff00</color><scale>1</scale><Icon><href>http://maps.google.com/mapfiles/kml/shapes/polygon.png</href></Icon></IconStyle><LabelStyle><color>ffffffff</color><colorMode>normal</colorMode><scale>0.8</scale></LabelStyle><LineStyle><color>ff262626</color><colorMode>normal</colorMode><width>1</width></LineStyle><PolyStyle><color>ff262626</color><outline>1</outline></PolyStyle></Style>"
+        << "<Style id=\"HSff262626\"><IconStyle><color>ff00ff00</color><scale>1</scale><Icon><href>http://maps.google.com/mapfiles/kml/shapes/polygon.png</href></Icon></IconStyle><LabelStyle><color>ffffffff</color><colorMode>normal</colorMode><scale>0.8</scale></LabelStyle><LineStyle><color>ff00ffff</color><colorMode>normal</colorMode><width>2</width></LineStyle><PolyStyle><color>ff262626</color><outline>1</outline></PolyStyle></Style>"
+        << "<Style id=\"NSff0000ff\"><IconStyle><color>ff00ff00</color><scale>1</scale><Icon><href>http://maps.google.com/mapfiles/kml/shapes/polygon.png</href></Icon></IconStyle><LabelStyle><color>ffffffff</color><colorMode>normal</colorMode><scale>0.8</scale></LabelStyle><LineStyle><color>ff0000ff</color><colorMode>normal</colorMode><width>1</width></LineStyle><PolyStyle><color>ff0000ff</color><outline>1</outline></PolyStyle></Style>"
+        << "<Style id=\"HSff0000ff\"><IconStyle><color>ff00ff00</color><scale>1</scale><Icon><href>http://maps.google.com/mapfiles/kml/shapes/polygon.png</href></Icon></IconStyle><LabelStyle><color>ffffffff</color><colorMode>normal</colorMode><scale>0.8</scale></LabelStyle><LineStyle><color>ff00ffff</color><colorMode>normal</colorMode><width>2</width></LineStyle><PolyStyle><color>ff0000ff</color><outline>1</outline></PolyStyle></Style>"
+        << "<Style id=\"NSffffffff\"><IconStyle><color>ff00ff00</color><scale>1</scale><Icon><href>http://maps.google.com/mapfiles/kml/shapes/polygon.png</href></Icon></IconStyle><LabelStyle><color>ffffffff</color><colorMode>normal</colorMode><scale>0.8</scale></LabelStyle><LineStyle><color>ffffffff</color><colorMode>normal</colorMode><width>1</width></LineStyle><PolyStyle><color>ffffffff</color><outline>1</outline></PolyStyle></Style>"
+        << "<Style id=\"HSffffffff\"><IconStyle><color>ff00ff00</color><scale>1</scale><Icon><href>http://maps.google.com/mapfiles/kml/shapes/polygon.png</href></Icon></IconStyle><LabelStyle><color>ffffffff</color><colorMode>normal</colorMode><scale>0.8</scale></LabelStyle><LineStyle><color>ff00ffff</color><colorMode>normal</colorMode><width>2</width></LineStyle><PolyStyle><color>ffffffff</color><outline>1</outline></PolyStyle></Style>"
+        << "<StyleMap id=\"SMff50b000\"><Pair><key>normal</key><styleUrl>#NSff50b000</styleUrl></Pair><Pair><key>highlight</key><styleUrl>#HSff50b000</styleUrl></Pair></StyleMap>"
+        << "<StyleMap id=\"SMff00ffff\"><Pair><key>normal</key><styleUrl>#NSff00ffff</styleUrl></Pair><Pair><key>highlight</key><styleUrl>#HSff00ffff</styleUrl></Pair></StyleMap>"
+        << "<StyleMap id=\"SMff262626\"><Pair><key>normal</key><styleUrl>#NSff262626</styleUrl></Pair><Pair><key>highlight</key><styleUrl>#HSff262626</styleUrl></Pair></StyleMap>"
+        << "<StyleMap id=\"SMff0000ff\"><Pair><key>normal</key><styleUrl>#NSff0000ff</styleUrl></Pair><Pair><key>highlight</key><styleUrl>#HSff0000ff</styleUrl></Pair></StyleMap>"
+        << "<StyleMap id=\"SMffffffff\"><Pair><key>normal</key><styleUrl>#NSffffffff</styleUrl></Pair><Pair><key>highlight</key><styleUrl>#HSffffffff</styleUrl></Pair></StyleMap>" 
+        << std::endl;
 
     for (size_t i = 0; i < CoverDate.size(); i++) {
         CoverDate[i].Polygon.transformTo(&srTo);
         write << "<Folder><name>" << CoverDate[i].ID_poly << "</name>" << std::endl;
         write << "<Placemark>";
+        if (CoverDate[i].RxLev == -100) {
+            write << "<styleUrl>#SMff50b000</styleUrl>";
+        }
+        if (CoverDate[i].RxLev == -113) {
+            write << "<styleUrl>#SMff00ffff</styleUrl>";
+        }
+        if (CoverDate[i].RxLev == -120) {
+            write << "<styleUrl>#SMff0000ff</styleUrl>";
+        }
+        if (CoverDate[i].RxLev == -200) {
+            write << "<styleUrl>#SMff262626</styleUrl>";
+        }
         CoverDate[i].Polygon.swapXY();
         write << CoverDate[i].Polygon.exportToKML() << std::endl;
         write << "</Placemark>";
@@ -522,11 +550,14 @@ void calcBadAreaByCover(std::vector<PoligonBuilding> &BuildingDate, const char* 
 
         for (int j = 0; j < BuildingDate.size(); j++) {
 
-            if (BuildingDate[j].Polygon.Intersect(&(CoverDate[i].Polygon)) || BuildingDate[j].Polygon.Contains(&(CoverDate[i].Polygon)) || BuildingDate[j].Polygon.Overlaps(&(CoverDate[i].Polygon)) || CoverDate[i].Polygon.Contains(&(BuildingDate[j].Polygon)) || CoverDate[i].Polygon.Overlaps(&(BuildingDate[j].Polygon))) {
+            if (BuildingDate[j].Polygon.Distance(&(CoverDate[i].Polygon)) < 500) {
+
+                if (BuildingDate[j].Polygon.Intersect(&(CoverDate[i].Polygon)) || BuildingDate[j].Polygon.Contains(&(CoverDate[i].Polygon)) || BuildingDate[j].Polygon.Overlaps(&(CoverDate[i].Polygon)) || CoverDate[i].Polygon.Contains(&(BuildingDate[j].Polygon)) || CoverDate[i].Polygon.Overlaps(&(BuildingDate[j].Polygon))) {
 
 #pragma omp critical
-                {
-                    LinkPolyToBuild.insert(std::pair<int, int>(i, j));
+                    {
+                        LinkPolyToBuild.insert(std::pair<int, int>(i, j));
+                    }
                 }
             }
         }
@@ -566,11 +597,11 @@ void calcBadAreaByCover(std::vector<PoligonBuilding> &BuildingDate, const char* 
     std::cout << "Затраченное время (в секундах): " << tt << std::endl;
 }
 
-void OutFile(std::vector<PoligonBuilding> &BuildingDate) {
+void OutFile(std::vector<PoligonBuilding> &BuildingDate, std::string OutName = "build.csv") {
 
     std::ofstream buildfile;
 
-    buildfile.open("build.csv");
+    buildfile.open(OutName);
 
     buildfile << "Building_id_cust;Building_id;Lat;Lon;height";
 
@@ -603,21 +634,21 @@ void OutFile(std::vector<PoligonBuilding> &BuildingDate) {
     buildfile.close();
 }
 
-void OutFile(std::vector<BSonBuilding> &BSDate) {
+void OutFile(std::vector<BSonBuilding> &BSDate, std::string OutName = "bslist.csv") {
 
     std::ofstream bsfile;
 
-    bsfile.open("bslist.csv");
+    bsfile.open(OutName);
 
-    bsfile << "ID_bs;Lat;Lon;Weight" << std::endl;
+    bsfile << "ID_bs;Lat;Lon;Weight;Build_list" << std::endl;
 
     for (size_t i = 0; i < BSDate.size(); i++) {
         bsfile << i << ";" << BSDate[i].Lat << ";" << BSDate[i].Lon << ";" << BSDate[i].getWeight();
-
+        
         for (auto j = BSDate[i].LinkToBuilding.begin(); j != BSDate[i].LinkToBuilding.end(); j++) {
-            bsfile << ";" << (*j);
+            bsfile << ";" << (*j).first << "/" << (*j).second->ID_build;
         }
-
+        
         bsfile << std::endl;
     }
 
@@ -639,10 +670,13 @@ int main() {
     double R = 250;
     //файлы с покрытием, сейчас принимает 1/4/7 этажи
     std::vector<std::pair<const char*, int>> CoverFile = {
-        std::pair<const char*, int>("1.MIF", 1),
-        std::pair<const char*, int>("4.MIF", 4),
-        std::pair<const char*, int>("7.MIF", 4)
+        std::pair<const char*, int>("1.MIF", 1)
+        ,std::pair<const char*, int>("4.MIF", 4)
+        ,std::pair<const char*, int>("7.MIF", 7)
     };
+   
+    std::ofstream ofs("logfile.txt");
+    std::clog.rdbuf(ofs.rdbuf());
 
     setlocale(LC_ALL, "Russian");
 
@@ -663,10 +697,9 @@ int main() {
     std::cout << "Всего зданий: ";
     std::cout << BuildingDate.size() << std::endl;
 
-
-    calcBadAreaByCover(BuildingDate, "1.MIF", 1, Asset_step_m);
-    //calcBadAreaByCover(BuildingDate, "4.MIF", 4, Asset_step_m);
-    //calcBadAreaByCover(BuildingDate, "7.MIF", 7, Asset_step_m);
+    for (auto iCoverFile = 0; iCoverFile < CoverFile.size(); iCoverFile++) {
+        calcBadAreaByCover(BuildingDate, CoverFile[iCoverFile].first, CoverFile[iCoverFile].second, Asset_step_m);
+    }
 
     OutFile(BuildingDate);
     
@@ -696,10 +729,10 @@ int main() {
             double Rbuff = BSDate[i].PointCenter.Distance(&BuildingDate[j].PointCenter);
             if (Rbuff <= 2 * R) {
                 if (Rbuff <= R) {
-                    BSDate[i].addWeight(BuildingDate[j].getWeight(), i, j);
+                    BSDate[i].addWeight(BuildingDate[j].getWeight(), &BuildingDate[j], i, BuildingDate[j].ID_build);
                 }
                 else {
-                    BSDate[i].addWeight(BuildingDate[j].getWeight() * pow(R / Rbuff, 10), i, j);
+                    BSDate[i].addWeight(BuildingDate[j].getWeight() * pow(R / Rbuff, 10), &BuildingDate[j], i, BuildingDate[j].ID_build);
                 }
             }
         }
@@ -727,8 +760,6 @@ int main() {
 
         std::cout << "Опредедение Топ " << i << std::endl;
 
-        std::cout << i << std::endl;
-
         bsfile << i << ";" << BSDate[i].Lat << ";" << BSDate[i].Lon << ";" << BSDate[i].getWeight();
 
         bsfile << std::endl;
@@ -738,56 +769,26 @@ int main() {
         }
 
         for (auto iLinkToBuilding = (*iBSDate).LinkToBuilding.begin(); iLinkToBuilding != (*iBSDate).LinkToBuilding.end(); iLinkToBuilding++) {
+            (*iLinkToBuilding).second->changeWeight(-((*iLinkToBuilding).second->getWeight() * (*iLinkToBuilding).first));
+        }
 
-            double Rbuff = (*iBSDate).PointCenter.Distance(&BuildingDate[(*iLinkToBuilding)].PointCenter);
-            double weightOut = 0;
-            double weightNow = BuildingDate[(*iLinkToBuilding)].getWeight();
+        std::cout << "Пересчет весов" << std::endl;
 
-            if (Rbuff <= 2 * R) {
-                if (Rbuff <= R) {
-                    weightOut = BuildingDate[(*iLinkToBuilding)].getWeight();
-                }
-                else {
-                    weightOut = BuildingDate[(*iLinkToBuilding)].getWeight() * pow(R / Rbuff, 10);
-                }
+        auto jBSDate = iBSDate;
+        jBSDate++;
+
+        for (; jBSDate != BSDate.end(); jBSDate++) {
+            (*jBSDate).changeWeight(-((*jBSDate).getWeight()));
+            for (auto iBuild = (*jBSDate).LinkToBuilding.begin(); iBuild != (*jBSDate).LinkToBuilding.end(); iBuild++) {
+                (*jBSDate).changeWeight((*iBuild).first * (*iBuild).second->getWeight());
             }
-            
-            double ProcWeight = weightOut / weightNow;
-            
-            auto bslinked = BSonBuilding::BuildingtoBS.equal_range((*iLinkToBuilding));
-            
-            for (auto ibslinked = bslinked.first; ibslinked != bslinked.second; ibslinked++) {
-                
-                double Rbuff2 = BuildingDate[(*iLinkToBuilding)].PointCenter.Distance(&BSDate[(*ibslinked).second].PointCenter);
-                
-                double weightNow2 = 0;
-
-                if (Rbuff2 <= 2 * R) {
-                    if (Rbuff2 <= R) {
-                        weightNow2 = BuildingDate[(*iLinkToBuilding)].getWeight();
-                    }
-                    else {
-                        weightNow2 = BuildingDate[(*iLinkToBuilding)].getWeight() * pow(R / Rbuff2, 10);
-                    }
-                }
-
-                double weightOut2 = weightNow2 * ProcWeight;
-
-                BSDate[(*ibslinked).second].changeWeight(-weightOut2);
-            
-            }
-
-            BuildingDate[(*iLinkToBuilding)].changeWeight(-weightOut);
-
-
         }
 
         std::cout << "Сортировка для поиска следующего топ" << std::endl;
-
+        
         sort(iBSDate, BSDate.end(), [](BSonBuilding a, BSonBuilding b) {
             return a > b;
         });
-
     }
 
     bsfile.close();

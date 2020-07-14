@@ -5,12 +5,12 @@ class BSonBuilding :
     public PoligonBuilding
 {
 private:
-    double Weight;
+    double BSWeight = 0;
 public:
 
     static std::multimap <int, int> BuildingtoBS;
     //на вход поступает id кастомный
-    void addWeight(double WeightIn, int IdBSCustom, int IdBuildCustom);
+    void addWeight(double WeightIn, PoligonBuilding* Build_in, int IdBSCustom, int IdBuildCustom);
 
     void changeWeight(double WeightIn);
 
@@ -21,18 +21,18 @@ public:
     }
 
     //вес базовой станции
-    std::set <int> LinkToBuilding;
+    std::set <std::pair<double, PoligonBuilding*>> LinkToBuilding;
 
     BSonBuilding() {};
 
     BSonBuilding operator=(const PoligonBuilding& rv);
 
     bool operator < (const BSonBuilding& vc) const {
-        return this->Weight < vc.Weight;
+        return this->BSWeight < vc.BSWeight;
     }
 
     bool operator > (const BSonBuilding& vc) const {
-        return this->Weight > vc.Weight;
+        return this->BSWeight > vc.BSWeight;
     }
 };
 
