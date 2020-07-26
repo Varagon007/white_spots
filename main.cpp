@@ -10,11 +10,52 @@
 #include <chrono>
 #include <iomanip>
 #include <algorithm>
+#include <execution>
 #include <PoligonCover.h>
 #include <PoligonBuilding.h>
 #include <BSonBuilding.h>
 
+//функция считавыющая информацию о границах с MID/MIF файла
+OGRPolygon Read_Border(const char* InputFile, OGRSpatialReference* RefGeo) {
 
+    GDALDataset* poDS;
+
+    poDS = (GDALDataset*)GDALOpenEx(InputFile, GDAL_OF_VECTOR, NULL, NULL, NULL);
+    if (poDS == NULL)
+    {
+        throw "Файл не найден";
+    }
+
+    poDS->ResetReading();
+
+    if (poDS->GetLayerCount() > 1) {
+        throw "Несколько слоев в границе";
+    }
+
+    OGRLayer* poLayer = poDS->GetLayer(0);
+    OGRFeature* poFeature;
+    OGRPolygon res;
+
+    while ((poFeature = poLayer->GetNextFeature()) != NULL) {
+
+
+        if (poFeature->GetGeometryRef() != NULL && wkbFlatten(poFeature->GetGeometryRef()->getGeometryType()) == wkbPolygon) {
+
+            res = *(OGRPolygon *) poFeature->GetGeometryRef();
+            
+            res.transformTo(RefGeo);
+        }
+
+        OGRFeature::DestroyFeature(poFeature);
+
+    }
+
+    GDALClose(poDS);
+
+    return res;
+}
+
+//функция считавыющая информацию о здании с MID/MIF файла
 void Read_Building(const char* InputFile,std::vector<PoligonBuilding> &BuildingDate) {
     
     GDALDataset* poDS;
@@ -26,8 +67,6 @@ void Read_Building(const char* InputFile,std::vector<PoligonBuilding> &BuildingD
     }
 
     poDS->ResetReading();
-
-    std::cout << "Всего слоев: " << poDS->GetLayerCount() << std::endl;
 
     for (auto i = 0; i < poDS->GetLayerCount(); i++) {
 
@@ -145,7 +184,7 @@ void Read_Building(const char* InputFile,std::vector<PoligonBuilding> &BuildingD
 
     GDALClose(poDS);
 }
-
+//функция считывающая информацию о покрытии
 void Read_Cover(const char* InputFile, std::vector<PoligonCover>& CoverDate) {
 
     GDALDataset* poDS;
@@ -158,8 +197,6 @@ void Read_Cover(const char* InputFile, std::vector<PoligonCover>& CoverDate) {
     }
 
     poDS->ResetReading();
-
-    std::cout << "Всего слоев: " << poDS->GetLayerCount() << std::endl;
 
     for (auto i = 0; i < poDS->GetLayerCount(); i++) {
 
@@ -216,8 +253,27 @@ void Read_Cover(const char* InputFile, std::vector<PoligonCover>& CoverDate) {
 
     GDALClose(poDS);
 }
+//функция возвращающая границы в виде прямоугольника
+void getBorder(double minX) {
 
+}
+
+//функция которая позволяет посчитать сколько в здании какого покрытия
 void AddCoverToBuilding(int Floor , int Asset_step_m, std::vector<PoligonBuilding> &BuildingDate, std::vector<PoligonCover> &CoverDate, std::multimap <int, int> &LinkPolyToBuild) {
+    
+    std::ofstream errorLink;
+
+    OGRSpatialReference srTo;
+
+    srTo.SetGeogCS("My geographic CRS",
+        "World Geodetic System 1984",
+        "My WGS84 Spheroid",
+        SRS_WGS84_SEMIMAJOR, SRS_WGS84_INVFLATTENING,
+        "Greenwich", 0.0,
+        "degree", 0.0174532925199433);
+
+    errorLink.open("errorLink.txt", std::fstream::out | std::fstream::app);
+
     for (int i = 0; i < CoverDate.size(); i++) {
 
         if (LinkPolyToBuild.count(i) == 1) {
@@ -290,6 +346,9 @@ void AddCoverToBuilding(int Floor , int Asset_step_m, std::vector<PoligonBuildin
                     default:
                         std::cout << "Неопознанный тип геометрии" << std::endl;
                         std::cout << Borders->getGeometryRef(l)->getGeometryName() << std::endl;
+
+                        std::clog << "Неопознанный тип геометрии" << std::endl;
+                        std::clog << Borders->getGeometryRef(l)->getGeometryName() << std::endl;
                         break;
                     }
                 }
@@ -298,6 +357,9 @@ void AddCoverToBuilding(int Floor , int Asset_step_m, std::vector<PoligonBuildin
             default:
                 std::cout << "Неопознанный тип геометрии" << std::endl;
                 std::cout << Polygon.getBoundary()->getGeometryName() << std::endl;
+
+                std::clog << "Неопознанный тип геометрии" << std::endl;
+                std::clog << Polygon.getBoundary()->getGeometryName() << std::endl;
                 break;
             }
 
@@ -338,7 +400,7 @@ void AddCoverToBuilding(int Floor , int Asset_step_m, std::vector<PoligonBuildin
                                 continue;
                             }
 
-                            if (BuildPoly.Overlaps(&buff)) {
+                            if (BuildPoly.Overlaps(&buff)|| buff.Overlaps(&BuildPoly)) {
                                 try {
                                     OGRGeometry* bb = BuildPoly.Intersection(&buff);
 
@@ -384,7 +446,16 @@ void AddCoverToBuilding(int Floor , int Asset_step_m, std::vector<PoligonBuildin
 
                         if (AreaBuildCover.size() == 0) {
                             std::cout << "ALARM" << std::endl;
-                            throw "ALARM";
+                            std::clog << "Присутствует непривязанный полигон" << std::endl;
+#pragma omp critical
+                            {
+                                errorLink << "<Placemark>";
+                                buff.transformTo(&srTo);
+                                buff.swapXY();
+                                errorLink << buff.exportToKML();
+                                errorLink << "</Placemark>" << std::endl;
+                            }
+                            //throw "ALARM";
                         }
                     }
 
@@ -396,8 +467,10 @@ void AddCoverToBuilding(int Floor , int Asset_step_m, std::vector<PoligonBuildin
 
     }
 
-}
+    errorLink.close();
 
+}
+//построение KML c заранее известными цветами зданий
 void OutKml(std::vector<PoligonCover> &CoverDateIn,std::string FileName) {
     
     std::vector<PoligonCover> CoverDate(CoverDateIn);
@@ -463,7 +536,7 @@ void OutKml(std::vector<PoligonCover> &CoverDateIn,std::string FileName) {
 
     write.close();
 }
-
+//построение kml по зданиям
 void OutKml(std::vector<PoligonBuilding> &BuildingDateIn, const char* FileName) {
     
     if (BuildingDateIn.size() == 0) {
@@ -506,7 +579,7 @@ void OutKml(std::vector<PoligonBuilding> &BuildingDateIn, const char* FileName) 
     write << "</Document></kml>";
     write.close();
 }
-
+//функция в которой маппится плохое покрытие к зданиям
 void calcBadAreaByCover(std::vector<PoligonBuilding> &BuildingDate, const char* filename, int Floor, int Asset_step_m = 10) {
 
 
@@ -514,6 +587,7 @@ void calcBadAreaByCover(std::vector<PoligonBuilding> &BuildingDate, const char* 
     double start = clock();
 
     std::cout << "Загрузка порытия " << Floor << " этажа: " << std::put_time(localtime(&now), "%F %T") << std::endl;
+    std::clog << "Загрузка порытия " << Floor << " этажа: " << std::put_time(localtime(&now), "%F %T") << std::endl;
 
     std::vector<PoligonCover> CoverDate;
     std::ofstream   linkfile, polyfile;
@@ -528,12 +602,16 @@ void calcBadAreaByCover(std::vector<PoligonBuilding> &BuildingDate, const char* 
     }
     catch (const char* a) {
         std::cout << a << std::endl;
+
     }
 
     //вот тут начинается работа
 
     std::cout << "Всего полигонов на " << Floor << " этаже: ";
     std::cout << CoverDate.size() << std::endl;
+
+    std::clog << "Всего полигонов на " << Floor << " этаже: ";
+    std::clog << CoverDate.size() << std::endl;
 
     polyfile << "Poly_id;RxLev;Area" << std::endl;
 
@@ -550,7 +628,7 @@ void calcBadAreaByCover(std::vector<PoligonBuilding> &BuildingDate, const char* 
 
         for (int j = 0; j < BuildingDate.size(); j++) {
 
-            if (BuildingDate[j].Polygon.Distance(&(CoverDate[i].Polygon)) < 500) {
+            if (BuildingDate[j].Polygon.Distance(&(CoverDate[i].Polygon)) < 1000) {
 
                 if (BuildingDate[j].Polygon.Intersect(&(CoverDate[i].Polygon)) || BuildingDate[j].Polygon.Contains(&(CoverDate[i].Polygon)) || BuildingDate[j].Polygon.Overlaps(&(CoverDate[i].Polygon)) || CoverDate[i].Polygon.Contains(&(BuildingDate[j].Polygon)) || CoverDate[i].Polygon.Overlaps(&(BuildingDate[j].Polygon))) {
 
@@ -565,6 +643,9 @@ void calcBadAreaByCover(std::vector<PoligonBuilding> &BuildingDate, const char* 
 
     std::cout << "Всего созданных линков на " << Floor << " этаже: ";
     std::cout << LinkPolyToBuild.size() << std::endl;
+
+    std::clog << "Всего созданных линков на " << Floor << " этаже: ";
+    std::clog << LinkPolyToBuild.size() << std::endl;
 
     linkfile << "Poly_id;Building_id" << std::endl;
 
@@ -588,6 +669,7 @@ void calcBadAreaByCover(std::vector<PoligonBuilding> &BuildingDate, const char* 
 
     now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     std::cout << "Загрузка порытия " << Floor << " этажа (Завершено): " << std::put_time(localtime(&now), "%F %T") << std::endl;
+    std::clog << "Загрузка порытия " << Floor << " этажа (Завершено): " << std::put_time(localtime(&now), "%F %T") << std::endl;
 
     double tt = ((clock() - start) / CLOCKS_PER_SEC);
     int hh = trunc(tt / 3600);
@@ -595,6 +677,9 @@ void calcBadAreaByCover(std::vector<PoligonBuilding> &BuildingDate, const char* 
     int ss = tt - 3600 * hh - mi * 60;
     std::cout << "Затраченное время: " << hh << " часов " << mi << " минут " << ss << " секунд" << std::endl;
     std::cout << "Затраченное время (в секундах): " << tt << std::endl;
+
+    std::clog << "Затраченное время: " << hh << " часов " << mi << " минут " << ss << " секунд" << std::endl;
+    std::clog << "Затраченное время (в секундах): " << tt << std::endl;
 }
 
 void OutFile(std::vector<PoligonBuilding> &BuildingDate, std::string OutName = "build.csv") {
@@ -655,13 +740,106 @@ void OutFile(std::vector<BSonBuilding> &BSDate, std::string OutName = "bslist.cs
     bsfile.close();
 
 }
+//возвращает true если файл есть в наличии
+bool checkFile(std::string FileIn) {
+    std::ifstream ifs;
+    bool res = true;
 
-int main() {
+    ifs.open(FileIn);
 
-    std::vector<PoligonBuilding> BuildingDate;
-    std::vector<BSonBuilding> BSDate;
+    if (!ifs.is_open()) {
+        res = false;
+    }
+
+    ifs.close();
+
+    return res;
+}
+
+void topByVoronoi(std::vector<BSonBuilding>& BSDate, std::vector<PoligonBuilding>& BuildingDate, OGRPolygon& BorderDate) {
+    OGRPolygon Border;
+    int maxX, minX, minY, maxY;
+
+    //BorderDate.getBoundary()
+}
+
+void topByCircle(std::vector<BSonBuilding> &BSDate, std::vector<PoligonBuilding> &BuildingDate, double R) {
+
+    std::ofstream bsfile;
+    size_t i = 0;
+
+#pragma omp parallel for
+    for (int i = 0; i < BSDate.size(); i++) {
+        for (size_t j = 0; j < BuildingDate.size(); j++) {
+            double Rbuff = BSDate[i].PointCenter.Distance(&BuildingDate[j].PointCenter);
+#pragma omp critical   
+            {
+                if (Rbuff <= 2 * R) {
+                    if (Rbuff <= R) {
+                        BSDate[i].addWeight(BuildingDate[j].getWeight(), &BuildingDate[j], i, BuildingDate[j].ID_build);
+                    }
+                    else {
+                        BSDate[i].addWeight(BuildingDate[j].getWeight() * pow(R / Rbuff, 10), &BuildingDate[j], i, BuildingDate[j].ID_build);
+                    }
+                }
+            }
+
+        }
+    }
+
+    OutFile(BSDate);
+
+    std::cout << "Выборка топ: Старт" << std::endl;
+    std::clog << "Выборка топ: Старт" << std::endl;
+
+
+
+    bsfile.open("bslist_filter.csv");
+
+    bsfile << "ID_bs;Lat;Lon;Weight" << std::endl;
+
+    for (auto iBSDate = BSDate.begin(); iBSDate != BSDate.end(); iBSDate++, i++) {
+
+        std::cout << "Опредедение Топ " << i << std::endl;
+        std::clog << "Опредедение Топ " << i << std::endl;
+
+        auto TopI = std::max_element(std::execution::par, iBSDate, BSDate.end());
+
+        std::iter_swap(TopI, iBSDate);
+
+        bsfile << i << ";" << (*iBSDate).Lat << ";" << (*iBSDate).Lon << ";" << (*iBSDate).getWeight();
+
+        bsfile << std::endl;
+
+        if ((*iBSDate).getWeight() == 0) {
+            break;
+        }
+
+        for (auto iLinkToBuilding = (*iBSDate).LinkToBuilding.begin(); iLinkToBuilding != (*iBSDate).LinkToBuilding.end(); iLinkToBuilding++) {
+            (*iLinkToBuilding).second->changeWeight(-((*iLinkToBuilding).second->getWeight() * (*iLinkToBuilding).first));
+        }
+
+        std::cout << "Пересчет весов" << std::endl;
+        std::clog << "Пересчет весов" << std::endl;
+
+        auto jBSDate = iBSDate;
+        jBSDate++;
+
+        for (; jBSDate != BSDate.end(); jBSDate++) {
+            (*jBSDate).recalcWeight();
+        }
+
+    }
+
+    bsfile.close();
+}
+
+int main(int argc, char* argv[]) {
+
+    setlocale(LC_ALL, "Russian");
+
     int max_thread = omp_get_max_threads() - 1;
-    omp_set_num_threads(max_thread);
+    
     //шаг ассета
     int Asset_step_m = 10;
     //уровень с которого строится БС
@@ -674,28 +852,195 @@ int main() {
         ,std::pair<const char*, int>("4.MIF", 4)
         ,std::pair<const char*, int>("7.MIF", 7)
     };
-   
+    int Version = 0;
+    auto Building = "B.MIF";
+    auto Border = "BR.MIF";
+
+    if (argc > 1) {
+        if (argc == 2 && strcmp(argv[1], "-h") == 0) {
+            std::cout << "Примеры вызова:" << std::endl;
+            std::cout << "white_vc.exe -f1 1.MIF -f4 4.MIF -f7 7.MIF" << std::endl;
+            std::cout << "white_vc.exe -f1 1.MIF" << std::endl;
+            std::cout << "white_vc.exe -f1 1.MIF -f4 4.MIF -f7 7.MIF -th 2 -as 10 -r 250 -rx -113" << std::endl;
+            std::cout << std::endl;
+            std::cout << "Список параметров для настройки:" << std::endl;
+            std::cout << "Пар.  def     описание" << std::endl;
+            std::cout << "-as   10      шаг в системе планирования, влияет на нарезку полигонов" << std::endl;
+            std::cout << "-th   max-1   число ядер ЦП, которое будет использовано для работы" << std::endl;
+            std::cout << "-rx   -113    уровень с которого начинает строиться здание" << std::endl;
+            std::cout << "-r    250     радиус 100% закрытия планируемой БС" << std::endl;
+            std::cout << "-f1   -       название файла с покрытием для 1 этажа (регистр важен)" << std::endl;
+            std::cout << "-f4   -       название файла с покрытием для 4 этажа (регистр важен)" << std::endl;
+            std::cout << "-f7   -       название файла с покрытием для 7 этажа (регистр важен)" << std::endl;
+            std::cout << "-b    B.MIF   название файла со зданиями (регистр важен)" << std::endl;
+            std::cout << "-br   BR.MIF  название файла с границами рассчета (если используются полигоны Вороного)" << std::endl;
+            std::cout << "-v    0       тип алгоритма: 0 - шайба, 1 - Вороной" << std::endl;
+            std::cout << std::endl;
+            std::cout << "Без списка файлов с этажами программа не запустится, предварительной проверки на наличии файла нет" << std::endl;
+            std::cout << "Файл со зданиями должен называться B.MIF" << std::endl;
+            return 0;
+        }
+        if (argc % 2 == 0) {
+            std::cout << "Неверное число аргументов "<< argv[1] << std::endl;
+            std::cout << "Для вызова справки вызовите из командной строки с параметром -h (например, white_vc.exe -h)" << std::endl;
+            return 0;
+        }
+        for (size_t i = 1; i < argc; i+=2) {
+            if (strcmp(argv[i], "-as")==0) {
+                try {
+                    int bb = std::atoi(argv[i + 1]);
+                    Asset_step_m = bb;
+                    std::cout << "Установлен шаг системы планирования: " << bb << std::endl;
+                }
+                catch (...) {
+                    std::cout << "Невозможно выполнить конвертацию -as" << std::endl;
+                    return 0;
+                }
+                continue;
+            }
+            if (strcmp(argv[i], "-th")==0) {
+                try {
+                    int bb = std::atoi(argv[i+1]);
+                    if (bb > omp_get_max_threads()) {
+                        throw;
+                    }
+                    max_thread = bb;
+                    std::cout << "Установлено максимальное количество потоков: " << bb << std::endl;
+                }
+                catch (...) {
+                    std::cout << "Невозможно выполнить конвертацию -th или столько ресурсов на ПК нет" << std::endl;
+                    return 0;
+                }
+                continue;
+            }
+            if (strcmp(argv[i], "-rx")==0) {
+                try {
+                    int bb = std::atoi(argv[i + 1]);
+                    RxLevBad = bb;
+                    std::cout << "Установлен уровень плохого покрытия: " << bb << std::endl;
+                }
+                catch (...) {
+                    std::cout << "Невозможно выполнить конвертацию -rx" << std::endl;
+                    return 0;
+                }
+                continue;
+            }
+            if (strcmp(argv[i], "-r")==0) {
+                try {
+                    int bb = std::atoi(argv[i + 1]);
+                    R = bb;
+                    std::cout << "Установлен размер 100% закрытия БС: " << bb << std::endl;
+                }
+                catch (...) {
+                    std::cout << "Невозможно выполнить конвертацию -r" << std::endl;
+                    return 0;
+                }
+                continue;
+            }
+            if (strcmp(argv[i], "-f1") == 0) {
+                CoverFile.push_back(std::pair<const char*, int>(argv[i+1], 1));
+                std::cout << "Выбран файл для 1 этажа: " << argv[i + 1] << std::endl;
+                continue;
+            }
+            if (strcmp(argv[i], "-f4") == 0) {
+                CoverFile.push_back(std::pair<const char*, int>(argv[i + 1], 4));
+                std::cout << "Выбран файл для 4 этажа: " << argv[i + 1] << std::endl;
+                continue;
+            }
+            if (strcmp(argv[i], "-f7") == 0) {
+                CoverFile.push_back(std::pair<const char*, int>(argv[i + 1], 7));
+                std::cout << "Выбран файл для 7 этажа: " << argv[i + 1] << std::endl;
+                continue;
+            }
+            if (strcmp(argv[i], "-b") == 0) {
+                Building = argv[i + 1];
+                std::cout << "Выбран файл для зданий: " << argv[i + 1] << std::endl;
+                continue;
+            }
+            if (strcmp(argv[i], "-br") == 0) {
+                Border = argv[i + 1];
+                std::cout << "Выбран файл для границ рассчета: " << argv[i + 1] << std::endl;
+                continue;
+            }
+            if (strcmp(argv[i], "-v") == 0) {
+                Version = std::atoi(argv[i + 1]);
+                std::cout << "Рассчет по алгоритму: ";
+                switch (Version){
+                case 0:
+                    std::cout << "шайба";
+                    break;
+                case 1:
+                    std::cout << "Полигоны Вороного";
+                    break;
+                default:
+                    std::cout << "Неизветсный алгоритм..... ВЫХОД из программы";
+                    return 0;
+                    break;
+                }
+                std::cout << std::endl;
+                continue;
+            }
+
+            std::cout << "Параметр не известен" << std::endl;
+            return 0;
+        }
+    }
+
+    if (CoverFile.size() == 0) {
+        std::cout << "Не добавлен ни 1 файл с покрытием для анализа" << std::endl;
+        return 0;
+    }
+
+    for (size_t i = 0; i < CoverFile.size(); i++) {
+        if (!checkFile(CoverFile[i].first)) {
+            std::cout << "Не найден файл c покрытием " << CoverFile[i].first << " ВЫХОД" << std::endl;
+            return 0;
+        }
+    }
+
+    if (!checkFile(Building)) {
+        std::cout << "Не найден файл со зданиями.... ВЫХОД" << std::endl;
+        return 0;
+    }
+
+    if (Version == 1) {
+
+        if (!checkFile(Border)) {
+            std::cout << "Не найден файл с границами.... ВЫХОД" << std::endl;
+            return 0;
+        }
+    }
+    
+    omp_set_num_threads(max_thread);
+
+    std::vector<PoligonBuilding> BuildingDate;
+    std::vector<BSonBuilding> BSDate;
+
     std::ofstream ofs("logfile.txt");
     std::clog.rdbuf(ofs.rdbuf());
 
-    setlocale(LC_ALL, "Russian");
-
     time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     std::cout << "Старт: " << std::put_time(localtime(&now), "%F %T") << std::endl;
+    std::clog << "Старт: " << std::put_time(localtime(&now), "%F %T") << std::endl;
 
     double start = clock();
 
     GDALAllRegister();
 
     try {
-        Read_Building("B.MIF", BuildingDate);
+        Read_Building(Building, BuildingDate);
     }
     catch (const char* a) {
         std::cout << a << std::endl;
+        return 0;
     }
 
     std::cout << "Всего зданий: ";
     std::cout << BuildingDate.size() << std::endl;
+
+    std::clog << "Всего зданий: ";
+    std::clog << BuildingDate.size() << std::endl;
+
 
     for (auto iCoverFile = 0; iCoverFile < CoverFile.size(); iCoverFile++) {
         calcBadAreaByCover(BuildingDate, CoverFile[iCoverFile].first, CoverFile[iCoverFile].second, Asset_step_m);
@@ -707,6 +1052,8 @@ int main() {
 
     //создаем массив 
     std::cout << "Заполняем вес исходных зданий и формируем список БС кандидатов" << BSDate.size() << std::endl;
+    std::clog << "Заполняем вес исходных зданий и формируем список БС кандидатов" << BSDate.size() << std::endl;
+
     for (size_t i = 0; i < BuildingDate.size(); i++) {
         auto LevelList = PoligonBuilding::getLevel();
         for (auto iLevelList = LevelList.begin(); iLevelList != LevelList.end(); iLevelList++) {
@@ -723,78 +1070,33 @@ int main() {
     }
 
     std::cout << "Зданий кандидатов: " << BSDate.size() << std::endl;
-
-    for (size_t i = 0; i < BSDate.size(); i++) {
-        for (size_t j = 0; j < BuildingDate.size(); j++) {
-            double Rbuff = BSDate[i].PointCenter.Distance(&BuildingDate[j].PointCenter);
-            if (Rbuff <= 2 * R) {
-                if (Rbuff <= R) {
-                    BSDate[i].addWeight(BuildingDate[j].getWeight(), &BuildingDate[j], i, BuildingDate[j].ID_build);
-                }
-                else {
-                    BSDate[i].addWeight(BuildingDate[j].getWeight() * pow(R / Rbuff, 10), &BuildingDate[j], i, BuildingDate[j].ID_build);
-                }
-            }
-        }
-    }
-
-    OutFile(BSDate);
-
-    std::cout << "Выборка топ: Старт" << std::endl;
-
-    std::ofstream bsfile;
-
-    bsfile.open("bslist_filter.csv");
-
-    bsfile << "ID_bs;Lat;Lon;Weight" << std::endl;
-
-    std::cout << "Предварительная сортировка" << std::endl;
-
-    sort(BSDate.begin(), BSDate.end(), [](BSonBuilding a, BSonBuilding b) {
-        return a > b;
-        });
- 
-    size_t i = 0;
+    std::clog << "Зданий кандидатов: " << BSDate.size() << std::endl;
     
-    for (auto iBSDate = BSDate.begin(); iBSDate != BSDate.end(); iBSDate++, i++) {
+    OGRPolygon BorderDate;
 
-        std::cout << "Опредедение Топ " << i << std::endl;
+    switch (Version) {
 
-        bsfile << i << ";" << BSDate[i].Lat << ";" << BSDate[i].Lon << ";" << BSDate[i].getWeight();
+    case 0:
+        topByCircle(BSDate, BuildingDate, R);
+        break;
+    case 1:
 
-        bsfile << std::endl;
-
-        if ((*iBSDate).getWeight() == 0) {
-            break;
-        }
-
-        for (auto iLinkToBuilding = (*iBSDate).LinkToBuilding.begin(); iLinkToBuilding != (*iBSDate).LinkToBuilding.end(); iLinkToBuilding++) {
-            (*iLinkToBuilding).second->changeWeight(-((*iLinkToBuilding).second->getWeight() * (*iLinkToBuilding).first));
-        }
-
-        std::cout << "Пересчет весов" << std::endl;
-
-        auto jBSDate = iBSDate;
-        jBSDate++;
-
-        for (; jBSDate != BSDate.end(); jBSDate++) {
-            (*jBSDate).changeWeight(-((*jBSDate).getWeight()));
-            for (auto iBuild = (*jBSDate).LinkToBuilding.begin(); iBuild != (*jBSDate).LinkToBuilding.end(); iBuild++) {
-                (*jBSDate).changeWeight((*iBuild).first * (*iBuild).second->getWeight());
-            }
-        }
-
-        std::cout << "Сортировка для поиска следующего топ" << std::endl;
         
-        sort(iBSDate, BSDate.end(), [](BSonBuilding a, BSonBuilding b) {
-            return a > b;
-        });
+        try {
+            BorderDate = Read_Border(Border, BuildingDate[0].Polygon.getSpatialReference());
+        }
+        catch (const char* a) {
+            std::cout << a << std::endl;
+            return 0;
+        }
+
+        topByVoronoi(BSDate, BuildingDate, BorderDate);
+
+        break;
     }
-
-    bsfile.close();
-
     now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     std::cout << "Финиш: " << std::put_time(localtime(&now), "%F %T") << std::endl;
+    std::clog << "Финиш: " << std::put_time(localtime(&now), "%F %T") << std::endl;
 
     double tt = ((clock() - start) / CLOCKS_PER_SEC);
     int hh = trunc(tt / 3600);
@@ -804,7 +1106,8 @@ int main() {
     std::cout << "Затраченное время: " << hh << " часов " << mi << " минут " << ss << " секунд" << std::endl;
     std::cout << "Затраченное время (в секундах): " << tt << std::endl;
 
-    system("pause");
+    std::clog << "Затраченное время: " << hh << " часов " << mi << " минут " << ss << " секунд" << std::endl;
+    std::clog << "Затраченное время (в секундах): " << tt << std::endl;
 
     return 0;
 }

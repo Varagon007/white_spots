@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ogrsf_frmts.h"
-
+//данный класс существует для того чтобы хранить в себе информацию о покрытии, полигон - уровень
 class PoligonCover
 {
     static int ID_poly_gen;

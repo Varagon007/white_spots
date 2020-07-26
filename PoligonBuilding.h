@@ -3,7 +3,7 @@
 #include "ogrsf_frmts.h"
 #include <set>
 #include <map>
-
+//данный класс существует для хранения полной информации о здании, в том числе о том сколько в здании плохого покрытия
 class PoligonBuilding
 {
 private:

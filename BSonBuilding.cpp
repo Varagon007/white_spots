@@ -11,7 +11,9 @@ void BSonBuilding::addWeight(double WeightIn, PoligonBuilding* Build_in, int IdB
     else {
         LinkToBuilding.insert(std::pair<double, PoligonBuilding*>(WeightIn / (Build_in->getWeight()), Build_in));
     }
+
     BSonBuilding::addLink(IdBSCustom, IdBuildCustom);
+    
 }
 
 void BSonBuilding::changeWeight(double WeightIn)
@@ -22,6 +24,19 @@ void BSonBuilding::changeWeight(double WeightIn)
     else {
         BSWeight += WeightIn;
     }
+}
+
+void BSonBuilding::recalcWeight()
+{
+    this->resetWeight();
+    for (auto iBuild = LinkToBuilding.begin(); iBuild != LinkToBuilding.end(); iBuild++) {
+        BSWeight += (*iBuild).first * (*iBuild).second->getWeight();
+    }
+}
+
+void BSonBuilding::resetWeight()
+{
+    BSWeight = 0;
 }
 
 double BSonBuilding::getWeight()

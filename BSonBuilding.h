@@ -1,6 +1,7 @@
 #pragma once
 #include "PoligonBuilding.h"
 #include "set"
+//класс в котором хранится информация о БС, запланированных на стройке на здании, дополнительно хранит в себе информацию о том с каких зданий берется покрытия, через указатель
 class BSonBuilding :
     public PoligonBuilding
 {
@@ -13,6 +14,10 @@ public:
     void addWeight(double WeightIn, PoligonBuilding* Build_in, int IdBSCustom, int IdBuildCustom);
 
     void changeWeight(double WeightIn);
+
+    void recalcWeight();
+
+    void resetWeight();
 
     double getWeight();
 
