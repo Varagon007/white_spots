@@ -5,6 +5,7 @@
 class PoligonCover
 {
     static int ID_poly_gen;
+
 public:
     int             ID_poly;
     double          RxLev;

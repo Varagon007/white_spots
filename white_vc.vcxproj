@@ -152,13 +152,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BS.cpp" />
+    <ClCompile Include="BsLinkToBuild.cpp" />
     <ClCompile Include="BSonBuilding.cpp" />
+    <ClCompile Include="CSVFile.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PoligonBuilding.cpp" />
     <ClCompile Include="PoligonCover.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BS.h" />
+    <ClInclude Include="BsLinkToBuild.h" />
     <ClInclude Include="BSonBuilding.h" />
+    <ClInclude Include="CSVFile.h" />
     <ClInclude Include="PoligonBuilding.h" />
     <ClInclude Include="PoligonCover.h" />
   </ItemGroup>

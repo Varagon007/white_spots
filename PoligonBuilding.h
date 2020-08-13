@@ -21,25 +21,26 @@ protected:
 
 public:
     
-    int         ID_build;
-    char        Type[50];
-    char        Wall_Mat[50];
-    double      Building;
-    int         Etage;
-    double      Area;
-    int         People_D;
-    int         People_N;
-    char        Volcano_type[50];
-    int         Clutter_num;
-    char        Clutter_type[50];
-    double      Lon;
-    double      Lat;
-    char        Address_NP[150];
-    char        Address_street[100];
-    char        Address_number[10];
-    char        FIAS[200];
-    OGRPolygon  Polygon;
-    OGRPoint    PointCenter;
+    int                 ID_build;
+    char                Type[50];
+    char                Wall_Mat[50];
+    double              Building;
+    int                 Etage;
+    double              Area;
+    int                 People_D;
+    int                 People_N;
+    char                Volcano_type[50];
+    int                 Clutter_num;
+    char                Clutter_type[50];
+    double              Lon;
+    double              Lat;
+    char                Address_NP[150];
+    char                Address_street[100];
+    char                Address_number[10];
+    char                FIAS[200];
+    OGRPolygon          Polygon;
+    OGRPoint            PointCenter;
+    OGRSpatialReference SR;
 
     std::map<double, double> LevelArea;
         
@@ -98,6 +99,9 @@ public:
         strcpy_s(this->FIAS, FIAS);
         this->Polygon = *Polygon;
         this->Polygon.Centroid(&this->PointCenter);
+        this->Polygon.assignSpatialReference(Polygon->getSpatialReference());
+        this->PointCenter.assignSpatialReference(Polygon->getSpatialReference());
+        this->SR = *(Polygon->getSpatialReference());
     };
 
     PoligonBuilding(int         ID_build,
@@ -137,6 +141,9 @@ public:
         strcpy_s(this->FIAS, FIAS);
         this->Polygon = *(OGRPolygon*)Geometry;
         this->Polygon.Centroid(&this->PointCenter);
+        this->Polygon.assignSpatialReference(Geometry->getSpatialReference());
+        this->PointCenter.assignSpatialReference(Geometry->getSpatialReference());
+        this->SR = *(Geometry->getSpatialReference());
     };
 };
 
