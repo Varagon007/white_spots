@@ -41,13 +41,13 @@ void BS::setR(double R)
 	}
 }
 
-void BS::setR(BS BorderBSList)
+void BS::setR(BS BorderBS)
 {
 	double RRes = this->R, Rbuff;
 
-	BorderBSList.Coordinate.transformTo(Coordinate.getSpatialReference());
+	BorderBS.Coordinate.transformTo(Coordinate.getSpatialReference());
 
-	Rbuff = Coordinate.Distance(&BorderBSList.Coordinate);
+	Rbuff = Coordinate.Distance(&BorderBS.Coordinate);
 
 	if (Rbuff < RRes) {
 		RRes = Rbuff;
@@ -71,10 +71,6 @@ void BS::setR(std::vector<BS> BorderBSList)
 
 	setR(RRes);
 			
-}
-
-void BS::checkR(BS BS)
-{
 }
 
 int BS::getBsId()

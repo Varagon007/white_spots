@@ -15,11 +15,9 @@ public:
 	
 	void		setR(double R);
 
-	void		setR(BS BorderBSList);
+	void		setR(BS BorderBS);
 
 	void		setR(std::vector<BS> BorderBSList);
-
-	void		checkR(BS BS);
 
 	int			getBsId();
 	

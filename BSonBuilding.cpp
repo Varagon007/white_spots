@@ -11,8 +11,15 @@ void BSonBuilding::addLink(PoligonBuilding* Building)
 void BSonBuilding::recalcWeight()
 {
     this->resetWeight();
-    for (auto iBuild = LinkToBuilding.begin(); iBuild != LinkToBuilding.end(); iBuild++) {
-        Weight += (*iBuild).recalcWeight(this);
+    for (auto iBuild = LinkToBuilding.begin(); iBuild != LinkToBuilding.end(); ) {
+        double buff = (*iBuild).recalcWeight(this);
+        Weight += buff;
+        if (buff == 0) {
+            iBuild = LinkToBuilding.erase(iBuild);
+        }
+        else {
+            iBuild++;
+        }
     }
 }
 
