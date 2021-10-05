@@ -15,7 +15,7 @@
 #include <PoligonBuilding.h>
 #include <BSonBuilding.h>
 #include <CSVFile.h>
-
+ 
 //функция считавыющая информацию о границах с MID/MIF файла
 OGRPolygon Read_Border(const char* InputFile, OGRSpatialReference* RefGeo) {
 
